@@ -93,6 +93,9 @@ En los archivos .gfa, ¿qué son las líneas que empiezan por ‘A’?
 :::
 
 
+```{bash}
+awk '(/^S/){print ">" $2 "\n" $3}' asm1/At4.bp.p_ctg.gfa > asm1/At4.fa
+```
 
 
 
