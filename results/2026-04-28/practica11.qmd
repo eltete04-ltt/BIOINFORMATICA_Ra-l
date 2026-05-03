@@ -98,7 +98,7 @@ galba.pl --species="Arabidopsis thaliana" \
 :::
 
 ::: {.callout-note icon="false"}
-##Ejercicio 5 Échales un vistazo a los archivos de salida de GALBA y trata de sacar algo en claro.
+## Ejercicio 5 
 :::
 Échales un vistazo a los archivos de salida de GALBA y trata de sacar algo en claro.
 
@@ -118,3 +118,10 @@ El `GALBA.log`deja documentan paso a paso la ejecución del proceso detallando t
 posibles errores. 
 Después hay otros archivos  relevantes como: `augustus.hints.gtf`, que contiene la anotación final de genes integrando evidencias externas (exones, CDS, intrones); a`ugustus.ab_initio.gtf`, con predicciones puramente ab initio sin pistas; `hintsfile.gff`, donde se recogen las evidencias (alineamientos de proteínas o RNA-seq) que guían la anotación.
 
+::: {.callout-note icon="false"}
+## Ejercicio 6 
+:::
+
+Si quieres, puedes intentar instalar GALBA en tu ordenador, tomando nota de las dificultades con las que te encuentras.
+
+El ejercicio 6 no lo he realizado. 
