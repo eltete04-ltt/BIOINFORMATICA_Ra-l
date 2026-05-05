@@ -1,0 +1,257 @@
+---
+title: "Práctica 12. Análisis de expresión diferencial"
+lang: es
+date: today
+execute: 
+  output: true
+  error: true
+engine: knitr
+bibliography: ../../doc/references.bib
+language:
+   title-block-published: "Última actualización:"
+   section-title-references: "Bibliografía"
+format:
+   html:
+      embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+## Datos
+
+He instalado el paquete de bioconductor `DESeq2`. También he descargado
+los archivos de datos `salmon.merged.gene_counts.tsv` y
+`dme_elev_samples.tsv`.
+
+## Exploración de los datos
+
+```{r}
+muestras <- read.table('../../data/dme_elev_samples.tsv', header = TRUE)
+genex <- read.table('../../data/salmon.merged.gene_counts.tsv',
+                    header = TRUE)
+```
+
+::: {.callout-note icon="false"}
+## Ejercicio 1
+
+Recuerda dejar constancia en un bloque de código de cómo obtienes las
+respuestas.
+
+1.  Usa la función `paste()` para añadir una columna a `muestras` que
+    contenga la población y la temperatura unidas por `_`.
+
+```{r}
+muestras$pop_temp <- paste(muestras$population,
+                        muestras$temp,
+                        sep = "_")
+```
+
+2.  ¿Cuál es el número total de lecturas por muestra?
+
+```{r}
+counts <- genex[, !(colnames(genex) %in% c("gene_id", "gene_name"))]
+total_lecturas_muestra<- colSums(counts)
+total_lecturas_muestra
+```
+
+3.  ¿Los recuentos tienen distribuciones parecidas entre muestras?
+
+Contienen distribuciones parecidas a lo largo de todas las muestras como muestra la figura siguiente. 
+```{r}
+boxplot(log2(counts + 1),
+        las = 2,
+        col = "yellow",
+        main = "Distribución de recuentos por muestra",
+        ylab = "log2(counts + 1)")
+```
+
+Se usa `log2(counts + 1)` para comprimir los valores muy altos y
+poder incluir los ceros sin errores, facilitando la comparación de las
+distribuciones entre muestras.
+
+4.  ¿Cuántos genes no se expresan en absoluto en ninguna de las
+    muestras?
+
+```{r}
+genes_no_expresados <- sum(rowSums(counts, na.rm = TRUE) == 0)
+genes_no_expresados
+```
+:::
+
+## Crear el objeto de clase `DESeqDataSet`
+
+Siguiendo el código proporcioando en el guión de prácticas, creo el objeto `DESeqDataSet`.
+
+```{r}
+suppressMessages(library('DESeq2'))
+all(names(genex)[3:14] == muestras$sample)
+```
+
+```{r}
+# Pasamos la columna "sample" a nombres de fila:
+row.names(muestras) <- muestras$sample
+# Eliminamos la columna "sample":
+muestras$sample <- NULL
+# Y convertimos "population" y "temp" en factores:
+muestras$population <- factor(muestras$population,
+                              levels = c('maine', 'panama'))
+muestras$temp       <- factor(muestras$temp,
+                              levels = c('low', 'high'))
+muestras
+```
+
+```{r}
+row.names(genex) <- genex$gene_name
+genex$gene_name <- NULL
+genex$gene_id   <- NULL
+genex <- round(as.matrix(genex))
+```
+
+```{r}
+dds1 <- DESeqDataSetFromMatrix(
+   countData = genex,
+   colData = muestras,
+   design = ~ population + temp
+)
+dds1
+```
+
+Una vez hecho esto ya tenemos el objeto `DESeqDataSet` creado.
+
+## Pre-filtrado
+
+```{r}
+keep <- rowSums(counts(dds1)) > 0
+dds1 <- dds1[keep, ]
+```
+
+## Expresión diferencial
+
+La función `DESeq()` produce un objeto también de clase `DESeqDataSet`, 
+pero con resultados añadidos.
+
+```{r}
+dds1 <- DESeq(dds1)
+res <- results(dds1)
+res
+```
+
+::: {.callout-note icon="false"}
+## Ejercicio 3
+1. Mira la ayuda de results() y genera también la tabla de resultados para el contraste entre las dos regiones de procedencia de las moscas.
+```{r}
+res_pop <- results(dds1, name = "population_panama_vs_maine")
+res_pop
+res_temp <- results(dds1, name = "temp_high_vs_low")
+res_temp
+```
+Si el log2FoldChange es positivo hay mayor expresión en Panama y si es negativo es en Maine.
+
+2. Usa summary() sobre los resultados para ver el número de genes diferencialmente expresados entre cada par de condiciones.
+```{r}
+summary(res_pop)
+```
+623 genes está up-regulated, es decir, tiene un log2FoldChange positivo, entonces se expresa más en Panama.
+634 genes está down-regulated, es decir, tiene un log2FoldChange negativo, entonces se expresa más en Maine.
+
+```{r}
+summary(res_temp)
+```
+2418 genes está up-regulated, es decir, tiene un log2FoldChange positivo, entonces se expresa más cuando
+la temperatura es alta.
+2336 genes está down-regulated, es decir, tiene un log2FoldChange negativo, entonces se expresa más cuando
+la temperatura es baja.
+
+
+3. ¿Cuál es la tasa de falsos positivos (FDR)?
+
+El p-valor está ajustado a < 0.1, entonces el FDR es de un 10%. Aproximadamente, 
+el 10% de genes que están significativamente expresados son falsos positivos. 
+:::
+
+## Gráficas
+
+```{r}
+plotMA(res)
+resShrink <- lfcShrink(dds1, coef = 'temp_high_vs_low',
+                       type = 'normal')
+plotMA(resShrink)
+```
+
+
+::: {.callout-note icon="false"}
+## Ejercicio 4
+
+¿Sabrías hacer una gráfica volcán?
+
+```{r}
+#Crear una variable de significancia
+res_pop$Significancia <- "No Significativo"
+res_pop$Significancia[res_pop$padj < 0.1 & res_pop$log2FoldChange > 0] <- "Upregulated"
+res_pop$Significancia[res_pop$padj < 0.1 & res_pop$log2FoldChange < 0] <- "Downregulated"
+
+library(ggplot2)
+
+df <- as.data.frame(res_pop)
+
+df$Significancia <- "No Significativo"
+df$Significancia[df$padj < 0.1 & df$log2FoldChange > 0] <- "Upregulated"
+df$Significancia[df$padj < 0.1 & df$log2FoldChange < 0] <- "Downregulated"
+ggplot(df, aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(color = Significancia)) +
+  geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  labs(title = "Volcano plot",
+       x = "log2 Fold Change",
+       y = "-log10 adjusted p-value")
+```
+```{r}
+#Crear una variable de significancia
+res_temp$Significancia <- "No Significativo"
+res_temp$Significancia[res_temp$padj < 0.1 & res_temp$log2FoldChange > 0] <- "Upregulated"
+res_temp$Significancia[res_temp$padj < 0.1 & res_temp$log2FoldChange < 0] <- "Downregulated"
+
+library(ggplot2)
+
+df <- as.data.frame(res_temp)
+
+df$Significancia <- "No Significativo"
+df$Significancia[df$padj < 0.1 & df$log2FoldChange > 0] <- "Upregulated"
+df$Significancia[df$padj < 0.1 & df$log2FoldChange < 0] <- "Downregulated"
+ggplot(df, aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(color = Significancia)) +
+  geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  labs(title = "Volcano plot",
+       x = "log2 Fold Change",
+       y = "-log10 adjusted p-value")
+```
+:::
+
+
+## Extraer datos transformados
+
+```{r}
+dds2 <- vst(dds1)
+NormCounts <- assay(dds2)
+
+res <- res[! is.na(res$pvalue), ]
+res <- res[order(res$log2FoldChange),]
+heatmap(NormCounts[c(head(row.names(res), 100),
+                     tail(row.names(res), 100)), ],
+        Rowv = NA, Colv = NA)
+```
+
+::: {.callout-note icon="false"}
+## Ejercicio 5
+¿Podrías explicar qué hace el bloque de código anterior?
+
+El código aplica primero una transformación VST (variance stabilizing transformation) al objeto `DESeqDataSet` para obtener valores de expresión normalizados comparables entre muestras, y extrae la matriz resultante con `assay()`. A continuación, se eliminan genes con valores de p-value ausentes y se ordenan los resultados según el log2FoldChange para identificar genes con mayor y menor cambio de expresión. Posteriormente, se seleccionan los 100 genes más sobreexpresados y los 100 más infraexpresados, que representan los extremos de la respuesta diferencial. Finalmente, se construye un heatmap sin clustering de filas ni columnas para visualizar los patrones de expresión de estos genes extremos a través de todas las muestras, permitiendo explorar de forma global las diferencias de expresión entre condiciones experimentales.
+
+:::
+
+::: {.callout-note icon="false"}
+## Ejercicio 6
+
+:::
