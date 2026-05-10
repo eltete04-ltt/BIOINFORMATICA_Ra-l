@@ -1,19 +1,31 @@
 ---
-title: "Practica8"
+title: "Práctica 9. Reconstrucción filogenética"
+lang: es
+date: today
+execute: 
+  output: true
+  error: true
+engine: knitr
+bibliography: ../../doc/references.bib
+language:
+   title-block-published: "Última actualización:"
+   section-title-references: "Bibliografía"
 format:
-  html: 
-    embed-resources: true
+   html:
+      embed-resources: true
 editor: 
   markdown: 
     wrap: 72
-bibliography: ../../doc/references.bib
 ---
 
 Una vez instalado el paquete phangorn y cargado los datos en el objeto
 de clase phyDat llamado mtdna. Se puede visualizar el objeto usando la
-función galnce() o la función image().
+función `glance()` o la función `image()`.
 
 ```{r}
+#| warning: false
+#| message: false
+#| 
 library(phangorn)
 mtdna <- read.phyDat('../../data/mtDNA.fasta', format = 'fasta')
 ```
@@ -24,21 +36,17 @@ mtdna <- read.phyDat('../../data/mtDNA.fasta', format = 'fasta')
 ¿Puedes confirmar el número de secuencias? ¿Qué longitud tiene el
 alineamiento? ¿Qué función usarías para extraer los nombres de las
 secuencias?
-:::
 
-Para confirmar el número de scuecnias se puede usar la función glance()
-y se mira la columan nseq o lenght().
+
+Para confirmar el número de scuecnias se puede usar la función `glance()`
+y se mira la columna nseq o `lenght()`.
 
 ```{r}
 glance(mtdna)
 ```
 
-```{r}
-lenght(mtdna)
-```
-
-Para la longitud del alinemaiento se puede hacer un sum() de la función
-attr o en glance mirar la columna nchar.
+Para la longitud del alinemaiento se puede hacer un `sum` de la función
+attr o en `glance` mirar la columna nchar.
 
 ```{r}
 glance(mtdna)
@@ -49,29 +57,31 @@ glance(mtdna)
 ```
 
 Para extraer los nombres de las secuencias se puede usar la función
-names().
+`names()`.
 
 ```{r}
 names(mtdna)
 ```
+:::
+## Árboles basados en distancias 
 
-##Árboles basados en distancias Se visualizan los árboles NJ y UPGMA de
-la siguiente manera:
+Se visualizan los árboles NJ y UPGMA de la siguiente manera:
 
 ```{r}
 distancias <- dist.ml(mtdna, model = 'F81')
 mt_nj    <- NJ(distancias)
 mt_upgma <- upgma(distancias)
-plot(mt_nj)
-plot(mt_upgma)
 ```
 
+::: {.callout-note icon="false"}
 ## Ejercicio
 
 1.¿De qué clase son los objetos mt_nj y mt_upgma?
 
 ```{r}
 class(mt_nj)
+```
+```{r}
 class(mt_upgma)
 ```
 
@@ -79,22 +89,36 @@ Son de clase phylo
 
 2.Consulta la estructura de estos objetos (str(mt_nj)).
 
+```{r}
+str(mt_nj)
+```
+```{r}
+str(mt_upgma)
+```
+
 3.Represéntalos gráficamente (plot(mt_nj)) y consulta la ayuda de la
 función plot.phylo() para saber qué opciones de representación gráfica
 tienes.
-
-4.Para qué sirven las funciones add.scale.bar() y axisPhylo()?
-
-add.scale.bar(): añade una barra de escala para indicar cuánto
-representan las longitudes de las ramas del árbol. axisPhylo(): añade un
-eje escalado al lado del árbol para leer distancias o el tiempo. :::
-
-Después de mirar los nodos del árbol:
 
 ```{r}
 plot(mt_nj)
 nodelabels()
 ```
+
+```{r}
+plot(mt_upgma)
+nodelabels()
+```
+4.Para qué sirven las funciones add.scale.bar() y axisPhylo()?
+
+add.scale.bar(): añade una barra de escala para indicar cuánto
+representan las longitudes de las ramas del árbol. axisPhylo(): añade un
+eje escalado al lado del árbol para leer distancias o el tiempo. 
+
+:::
+
+
+# Enraizar
 
 Se puede enraizar el árbol en el nodo que se vea conveniente, en este
 caso, el 75.
@@ -149,13 +173,146 @@ fechas
 mt_nj_rtt <- rtt(mt_nj, tip.dates = fechas, objective = 'rms')
 plot(mt_nj_rtt, cex = 0.9,align.tip.label = TRUE)
 ```
-
+::: {.callout-note icon="false"}
 ## Ejercicio
 
 1. ¿Se corresponden bien las distancias evolutivas estimadas con las dataciones?
+
+Sí, en general sí: las secuencias más cercanas entre sí aparecen con ramas más cortas, pero la correspondencia con la datación no es exacta porque la longitud de rama refleja cambio genético y no siempre tiempo absoluto.
+
 2. ¿Qué secuencias crees que se ajustan menos a su supuesta edad?
+
+Las que parecen ajustarse peor son algunas de H. heidelbergensis y ciertos denisovanos, porque su posición no encaja de forma tan clara con una edad intermedia esperable en el árbol de la imagen.
+
+
 3. ¿Qué razones puede haber para que la edad de una secuencia no se corresponda con la cantidad de cambios que ha acumulado?
+
+Puede pasar por tasas de mutación distintas entre linajes y también por factores técnicos como mala conservación del ADN antiguo, errores de secuenciación o alineamiento.
+
 :::
 
 
+## Distancias
 
+Si has creado el objeto `distancias` antes, puedes usarlo para conocer la cantidad estimada de cambios entre los cromosomas mitocondriales humanos y de neandertales, por ejemplo. El objeto de clase dist es incómodo, pero podemos obtener una simple matriz fácilmente:
+
+
+```{r}
+distMat <- as.matrix(distancias)
+# Esto son vectores lógicos que podemos usar después para seleccionar filas
+# y columnas de la matriz de distancias.
+modernos     <- startsWith(colnames(distMat), 'H.s.modern')
+neandertales <- startsWith(colnames(distMat), 'H.s.neandertal')
+denisovanos  <- startsWith(colnames(distMat), 'H.s.denisova')
+chimpances   <- startsWith(colnames(distMat), 'P.troglodytes')
+bonobos      <- startsWith(colnames(distMat), 'P.paniscus')
+```
+
+La distancia estimada media entre humanos y neandertales se puede obtener como:
+
+```{r}
+mean(distMat[modernos, neandertales])
+```
+
+
+
+::: {.callout-note icon="false"}
+## Ejercicio
+
+1. Calcula las distancias medias entre todos los grupos.
+
+Más bonito sería hacer una tabla, supongo que haciendo un bucle con `for`se podría hacer,
+pero no sé muy bien como hacerlo, entonces voy a hacerlo de la manera simple, pero menos vistosa. 
+
+Distancia entre modernos y el resto:
+
+
+```{r}
+mean(distMat[modernos, neandertales])
+```
+
+```{r}
+mean(distMat[modernos, denisovanos])
+```
+
+```{r}
+mean(distMat[modernos, chimpances])
+```
+
+```{r}
+mean(distMat[modernos, bonobos])
+```
+
+Distancia entre neandertales y el resto: (exceptuando moderno que ya está hecha)
+
+```{r}
+mean(distMat[neandertales, denisovanos])
+```
+
+```{r}
+mean(distMat[neandertales, chimpances])
+```
+
+```{r}
+mean(distMat[neandertales, bonobos])
+```
+
+Distancia entre denisovanos y el resto: (exceptuando modernos y neandertales)
+
+```{r}
+mean(distMat[denisovanos, chimpances])
+```
+
+```{r}
+mean(distMat[denisovanos, bonobos])
+```
+
+Distancia entre chimpances y bonobos: 
+
+```{r}
+mean(distMat[chimpances, bonobos])
+```
+
+2. ¿Cuántas veces mayor es la distancia entre humanos y chimpancés que entre humanos y neandertales?
+
+```{r}
+mean(distMat[modernos, chimpances])/mean(distMat[modernos, neandertales])
+```
+Es aproximadamente 7.5 veces mayor la distancia entre humanos y chimpancés que la distancia entre humanos y 
+neandertales. 
+
+3. ¿Cómo calcularías la distancia media entre dos secuencias de humanos modernos?
+
+Con la función `lower.tri()` se escogen únicamente los elementos del triángulo inferior de la matriz, excluyendo la diagonal, donde los valores son 0. De este modo, cada comparación entre humanos se cuenta solo una vez.
+
+```{r}
+matriz_modernos <- distMat[modernos, modernos]
+distancias_reales <- matriz_modernos[lower.tri(matriz_modernos)]
+mean(distancias_reales)
+```
+:::
+
+Las distancias estimadas no son exactas. Cuanto mayor es la distancia, mayor es el error en la estimación, pero nos ayudan a estimar el tiempo transcurrido desde que dos linajes se separaron.
+
+En los árboles las distancias se representan mediante la suma de las longitudes que separan las hojas. Las podemos obtener con la función `cophenetic()`:
+
+```{r}
+distCofen <- cophenetic(mt_nj_rooted)
+```
+
+::: {.callout-note icon="false"}
+## Ejercicio
+
+¿Cuánto se parecen las distancias estimadas a las distancias cofenéticas?
+
+```{r}
+# Aquí usamos las matricees como vectores:
+plot(distMat, distCofen, xlab = 'Distancias F81', ylab = 'Dist. cofenéticas')
+abline(a = 0, b = 1, col = 'red', lty = 2)
+```
+
+
+Las distancias cofenéticas se parecen mucho a las distancias estimadas, ya que los puntos del gráfico se sitúan muy próximos a la diagonal. Esto indica que el árbol reconstruido refleja bastante bien las distancias originales entre las secuencias.
+:::
+
+# **Hasta aquí hemos realizado en clase y debido a que esta práctica es tan larga no voy poder acabarla por completo**
