@@ -18,6 +18,18 @@ editor:
     wrap: 72
 ---
 
+## Programas
+Los programas que no utilizaremos (porque no están instalados y son difíciles de instalar son `RepeatModeler` [@Flynn2020], `RepeatMasker`, y `GALBA` [@Bruna2023]. Cada uno de ellos, a su vez, utiliza otros.
+
+<div class="tool-title">RepeatModeler</div>
+Utiliza como input sólo el ensamblaje, para identificar los elementos repetitivos que pueda haber. Genera, entre otras cosas, un archivo FASTA con las secuencias consenso de las familias de elementos transponibles identificadas. Este archivo FASTA se puede usar después para enmascarar el genoma.
+
+<div class="tool-title">RepeatMasker</div>
+Su propósito es enmascarar del ensamblaje todas las instancias de elementos repetitivos que pueda identificar. Utiliza una librería de elementos repetitivos previamente conocidos. Existen bases de datos, como Dfam, que pueden usarse cuando queremos enmascarar el ensamblaje de un organismo parecido a aquellos de los que ya conocemos muchos elementos repetitivos. También podemos usar el archivo FASTA generado por RepeatModeler de novo.
+
+<div class="tool-title">GALBA</div>
+Utiliza `miniprot` [@Li2023] para alinear las proteínas al ensamblaje i encontrar genes homólogos a los que las condifican. A partir de estos resultados, entrena a Augustus para definir mejor los bordes de los genes y posiblemente encontrar otros genes adicionales. No es el programa más preciso, pero es relativamente sencillo de usar.
+
 ## Datos
 
 El primero paso es decargar de Uniprot las 6023 proteínas que sabemos que codifica el cromosoma 4 de Arabidopsis thalina. Procedo a descomrpimir el archivo con `gunzip` en bash.
@@ -48,17 +60,17 @@ Descargo los resultados: `RepeatMaskerResults.zip`, `RepeatModelerResults.zip` y
 
 Explora los resultados de `RepeatModeler` y trata de contestar las preguntas siguientes.
 
-¿Cuántas familias de elementos transponibles se han encontrado?
+1. ¿Cuántas familias de elementos transponibles se han encontrado?
 
 ```{bash}
 grep -c "^>" ../../results/2026-04-28/RepeatModelerResults/RM_380234.MonApr202303552026/consensi.fa
 ```
 
-¿Cuánto duró la ejecución del programa?
+2. ¿Cuánto duró la ejecución del programa?
 
 En `rmod.log`al final del todo proporciona la información del tiempo que duró la ejecución del programa. Program Time: 01:02:16 (hh:mm:ss) Elapsed Time
 
-¿Cuál dirías que es el archivo de salida más importante?
+3. ¿Cuál dirías que es el archivo de salida más importante?
 
 Diría que es `consensi.fa.classified` porque proporciona las secuencias consenso de diferentes familias y les porporciona una clase.
 :::
@@ -87,7 +99,8 @@ fi
 
 Incluye en tu documento de Quarto un bloque de código (pero no ejecutable, con la opción `eval: false`) como el anterior, donde los caminos TSERBA y a MINIPROTHINT se correspondan con tu propia carpeta `bin`, aunque no los tengas instalados.
 
-```{bash eval:false}
+```{bash}
+#| eval: false
 export TSEBRA_PATH=/home/raulrodfer/bin/TSEBRA/
 export MINIPROTHINT_PATH=/home/raulrodfer/bin/miniprothint/
 
@@ -99,7 +112,7 @@ galba.pl --species="Arabidopsis thaliana" \
 
 ::: {.callout-note icon="false"}
 ## Ejercicio 5 
-:::
+
 Échales un vistazo a los archivos de salida de GALBA y trata de sacar algo en claro.
 
 ```{bash}
@@ -117,11 +130,14 @@ head -n 5 GALBA/galba.aa # Un archivo tipo FASTA que contiene las secuencias de 
 El `GALBA.log`deja documentan paso a paso la ejecución del proceso detallando tiempos y
 posibles errores. 
 Después hay otros archivos  relevantes como: `augustus.hints.gtf`, que contiene la anotación final de genes integrando evidencias externas (exones, CDS, intrones); a`ugustus.ab_initio.gtf`, con predicciones puramente ab initio sin pistas; `hintsfile.gff`, donde se recogen las evidencias (alineamientos de proteínas o RNA-seq) que guían la anotación.
+:::
 
 ::: {.callout-note icon="false"}
 ## Ejercicio 6 
+Si quieres, puedes intentar instalar GALBA en tu ordenador, tomando nota de las dificultades con las que te encuentras.
 :::
 
-Si quieres, puedes intentar instalar GALBA en tu ordenador, tomando nota de las dificultades con las que te encuentras.
 
-El ejercicio 6 no lo he realizado. 
+El ejercicio 6 no lo he realizado.
+
+# Bibliografía

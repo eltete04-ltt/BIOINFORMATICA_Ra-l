@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Práctica 11. Anotación</title>
+<title>Práctica 8. BLAST</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -53,27 +53,7 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-
-div.csl-bib-body { }
-div.csl-entry {
-clear: both;
-margin-bottom: 0em;
-}
-.hanging-indent div.csl-entry {
-margin-left:2em;
-text-indent:-2em;
-}
-div.csl-left-margin {
-min-width:2em;
-float:left;
-}
-div.csl-right-inline {
-margin-left:2em;
-padding-left:1em;
-}
-div.csl-indent {
-margin-left: 2em;
-}</style>
+</style>
 
 
 <script>/*!
@@ -3104,7 +3084,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Práctica 11. Anotación</h1>
+<h1 class="title">Práctica 8. BLAST</h1>
 </div>
 
 
@@ -3127,201 +3107,402 @@ vertical-align: -.125em;
 </header>
 
 
-<section id="programas" class="level2">
-<h2 class="anchored" data-anchor-id="programas">Programas</h2>
-<p>Los programas que no utilizaremos (porque no están instalados y son difíciles de instalar son <code>RepeatModeler</code> <span class="citation" data-cites="Flynn2020">(<a href="#ref-Flynn2020" role="doc-biblioref">Flynn et al. 2020</a>)</span>, <code>RepeatMasker</code>, y <code>GALBA</code> <span class="citation" data-cites="Bruna2023">(<a href="#ref-Bruna2023" role="doc-biblioref">Bruna et al. 2023</a>)</span>. Cada uno de ellos, a su vez, utiliza otros.</p>
-<div class="tool-title">
-RepeatModeler
-</div>
-<p>Utiliza como input sólo el ensamblaje, para identificar los elementos repetitivos que pueda haber. Genera, entre otras cosas, un archivo FASTA con las secuencias consenso de las familias de elementos transponibles identificadas. Este archivo FASTA se puede usar después para enmascarar el genoma.</p>
-<div class="tool-title">
-RepeatMasker
-</div>
-<p>Su propósito es enmascarar del ensamblaje todas las instancias de elementos repetitivos que pueda identificar. Utiliza una librería de elementos repetitivos previamente conocidos. Existen bases de datos, como Dfam, que pueden usarse cuando queremos enmascarar el ensamblaje de un organismo parecido a aquellos de los que ya conocemos muchos elementos repetitivos. También podemos usar el archivo FASTA generado por RepeatModeler de novo.</p>
-<div class="tool-title">
-GALBA
-</div>
-<p>Utiliza <code>miniprot</code> <span class="citation" data-cites="Li2023">(<a href="#ref-Li2023" role="doc-biblioref">Li 2023</a>)</span> para alinear las proteínas al ensamblaje i encontrar genes homólogos a los que las condifican. A partir de estos resultados, entrena a Augustus para definir mejor los bordes de los genes y posiblemente encontrar otros genes adicionales. No es el programa más preciso, pero es relativamente sencillo de usar.</p>
+<p>Para instalar ncbi-blast+ en macOS se puede hacer desde el terminal ejecutando:</p>
+<p><code>brew install blast blastn -version</code></p>
+<p><code>datasets</code> y <code>dataformat</code> ya se encuentran instalados de la práctica 4. Por último, se tiene que instalar <code>Biostrings</code> a través de <code>Bioconductor</code>:</p>
+<section id="ejercicio-1.-identificación-aproximada-de-ortólogos" class="level2">
+<h2 class="anchored" data-anchor-id="ejercicio-1.-identificación-aproximada-de-ortólogos">Ejercicio 1. Identificación aproximada de ortólogos</h2>
+<p>Tras descargar el proteoma de Buchnera aphidicola (107806) y Blochmannia ocreatus (251538), procedo a realizar el primer ejercicio.</p>
 </section>
-<section id="datos" class="level2">
-<h2 class="anchored" data-anchor-id="datos">Datos</h2>
-<p>El primero paso es decargar de Uniprot las 6023 proteínas que sabemos que codifica el cromosoma 4 de Arabidopsis thalina. Procedo a descomrpimir el archivo con <code>gunzip</code> en bash.</p>
-<p><code>gunzip -k ../../data/uniprotkb_proteome_UP000006548_AND_prot_2026_04_28.fasta.gz</code></p>
+<section id="enmascarar-e-indexar-los-proteomas" class="level2">
+<h2 class="anchored" data-anchor-id="enmascarar-e-indexar-los-proteomas">Enmascarar e indexar los proteomas</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/buchnera.paa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Creamos un archivo para enmascarar zonas de baja complejidad:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> buchnera_seg.asnb <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="ex">segmasker</span> <span class="at">-in</span> ../../data/buchnera.fa <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">-infmt</span> fasta <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">-outfmt</span> maskinfo_asn1_bin <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span>  ../../data/buchnera_seg.asnb</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>   <span class="cf">fi</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Y indexamos el archivo FASTA para BLAST:</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>   <span class="ex">makeblastdb</span>  <span class="at">-in</span>  ../../data/buchnera.fa <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">-input_type</span> fasta <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">-dbtype</span> prot <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">-mask_data</span> ../../data/buchnera_seg.asnb <span class="dt">\</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> ../../data/buchnera <span class="dt">\</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">-title</span> <span class="st">&quot;Proteoma de Buchnera&quot;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Hay que repetir todo esto para Blochmannia.</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/blochmannia.paa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Creamos un archivo para enmascarar zonas de baja complejidad:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> blochmannia_seg.asnb <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="ex">segmasker</span> <span class="at">-in</span> ../../data/blochmannia.fa <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">-infmt</span> fasta <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">-outfmt</span> maskinfo_asn1_bin <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span>  ../../data/blochmannia_seg.asnb</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>   <span class="cf">fi</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Y indexamos el archivo FASTA para BLAST:</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>   <span class="ex">makeblastdb</span>  <span class="at">-in</span>  ../../data/blochmannia.fa <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">-input_type</span> fasta <span class="dt">\</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">-dbtype</span> prot <span class="dt">\</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">-mask_data</span> ../../data/blochmannia_seg.asnb <span class="dt">\</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> ../../data/blochmannia <span class="dt">\</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">-title</span> <span class="st">&quot;Proteoma de Blochmannia&quot;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
-<section id="resultados" class="level2">
-<h2 class="anchored" data-anchor-id="resultados">Resultados</h2>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 1
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Sabiendo que una forma de hacerlo es la siguiente, incluye la orden en un bloque de Bash de tu documento de Quarto de tal manera que el archivo de entrada esté en tu carpeta data y el de salida en la misma carpeta de trabajo de la práctica actual, y además, que sólo se ejecute si el archivo de salida proteinas.fasta no existe.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> proteinas.fasta <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">awk</span> <span class="st">&#39;(/^&gt;/){split($1, A, /\|/); print &quot;&gt;&quot; A[2]}(/^[^&gt;]/){print $0}&#39;</span> <span class="dt">\</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ../../data/uniprotkb_proteome_UP000006548_AND_prot_2026_04_28.fasta <span class="dt">\</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> proteinas.fasta</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</div>
-</div>
-<p>Descargo los resultados: <code>RepeatMaskerResults.zip</code>, <code>RepeatModelerResults.zip</code> y <code>galba.zip</code>.</p>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 2
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Explora los resultados de <code>RepeatModeler</code> y trata de contestar las preguntas siguientes.</p>
-<ol type="1">
-<li>¿Cuántas familias de elementos transponibles se han encontrado?</li>
-</ol>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;^&gt;&quot;</span> ../../results/2026-04-28/RepeatModelerResults/RM_380234.MonApr202303552026/consensi.fa</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>24</code></pre>
-</div>
-</div>
-<ol start="2" type="1">
-<li>¿Cuánto duró la ejecución del programa?</li>
-</ol>
-<p>En <code>rmod.log</code>al final del todo proporciona la información del tiempo que duró la ejecución del programa. Program Time: 01:02:16 (hh:mm:ss) Elapsed Time</p>
-<ol start="3" type="1">
-<li>¿Cuál dirías que es el archivo de salida más importante?</li>
-</ol>
-<p>Diría que es <code>consensi.fa.classified</code> porque proporciona las secuencias consenso de diferentes familias y les porporciona una clase.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 3
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><p>Instala el programa <code>bedtools</code> siguiendo las instrucciones oportunas para tu sistema en la página oficial. Lo he instalado desde el Homebrew de Mac.</p></li>
-<li><p>Utiliza el ensamblaje original como archivo FASTA de entrada y el archivo <code>GFF</code> que ha producido <code>RepetaMasker</code> como coordenadas de las regiones a enmascarar. Lee el manual de <code>bedtools maskfasta</code> en este enlace y genera el ensamblaje con máscara suave llamado <code>At4.soft.fa</code>.</p></li>
-</ol>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> At4.soft.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bedtools</span> maskfasta <span class="dt">\</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">-fi</span> ../../results/2026-04-21/asm1/At4.fa <span class="dt">\</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-bed</span> ../../results/2026-04-28/RM01/At4.fa.out.gff <span class="dt">\</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-soft</span> <span class="dt">\</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">-fo</span> At4.soft.fa</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 4
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Incluye en tu documento de Quarto un bloque de código (pero no ejecutable, con la opción <code>eval: false</code>) como el anterior, donde los caminos TSERBA y a MINIPROTHINT se correspondan con tu propia carpeta <code>bin</code>, aunque no los tengas instalados.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">TSEBRA_PATH</span><span class="op">=</span>/home/raulrodfer/bin/TSEBRA/</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MINIPROTHINT_PATH</span><span class="op">=</span>/home/raulrodfer/bin/miniprothint/</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">galba.pl</span> <span class="at">--species</span><span class="op">=</span><span class="st">&quot;Arabidopsis thaliana&quot;</span> <span class="dt">\</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">--genome</span><span class="op">=</span>At4.soft.fa <span class="dt">\</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">--prot_seq</span><span class="op">=</span>proteinas.fasta</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 5
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Échales un vistazo a los archivos de salida de GALBA y trata de sacar algo en claro.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 5 GALBA/galba.gtf <span class="co"># Una tabla con coordenadas de los genes, de que herramienta vienen, el tipo de estructura y demás parámetros interesantes.</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>ptg000001l  AUGUSTUS    gene    7497    7970    0.92    -   .   g11
-ptg000001l  AUGUSTUS    transcript  7497    7970    0.92    -   .   g11.t1
-ptg000001l  AUGUSTUS    stop_codon  7497    7499    .   -   0   transcript_id &quot;g11.t1&quot;; gene_id &quot;g11&quot;;
-ptg000001l  AUGUSTUS    CDS 7500    7970    0.92    -   0   transcript_id &quot;g11.t1&quot;; gene_id &quot;g11&quot;;
-ptg000001l  AUGUSTUS    exon    7500    7970    .   -   .   transcript_id &quot;g11.t1&quot;; gene_id &quot;g11&quot;;</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 5 GALBA/galba.codingseq <span class="co"># Otro archivo FASTA que contiene las secuencias de los genes pero en NUCLEOTIDOS</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&gt;g11.t1
-TTGGATCGGATCGGCCAGACCGATCGTCAGACGGATCGGATCGGCCAGACGGATCGGACA
-GACCGATCGTCGGACGGGTCGGATGGGACAGGCCGATCGTCTGACGGAACGGGTCGGACA
-GACCGATCGTCGGATGGGATGGATCGAGAAAAGTGTTCGAGGAAGCACAAGGATAAGTGC
-ATCCGAACACACCCAAGGGTCGCCCATGGATGCAATCTTACCGATAAAGGGAGAAAGCAC</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 5 GALBA/galba.aa <span class="co"># Un archivo tipo FASTA que contiene las secuencias de aminoacidos (las proteinas) de los genes que se han predicho</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&gt;g11.t1
-LDRIGQTDRQTDRIGQTDRTDRSSDGSDGTGRSSDGTGRTDRSSDGMDREKCSRKHKDKC
-IRTHPRVAHGCNLTDKGRKHQEWVRNVIHHKGSTSRPPSCIYLLSHGETDQRSVRPKGDS
-TDNQRESPRWEPMDKTDVGPASKPKADGRKISWASLR
-&gt;g17.t1</code></pre>
-</div>
-</div>
-<p>El <code>GALBA.log</code>deja documentan paso a paso la ejecución del proceso detallando tiempos y posibles errores. Después hay otros archivos relevantes como: <code>augustus.hints.gtf</code>, que contiene la anotación final de genes integrando evidencias externas (exones, CDS, intrones); a<code>ugustus.ab_initio.gtf</code>, con predicciones puramente ab initio sin pistas; <code>hintsfile.gff</code>, donde se recogen las evidencias (alineamientos de proteínas o RNA-seq) que guían la anotación.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-note no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Ejercicio 6
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Si quieres, puedes intentar instalar GALBA en tu ordenador, tomando nota de las dificultades con las que te encuentras.</p>
-</div>
-</div>
-<p>El ejercicio 6 no lo he realizado.</p>
+<section id="realizar-las-búsquedas-de-blastp" class="level2">
+<h2 class="anchored" data-anchor-id="realizar-las-búsquedas-de-blastp">Realizar las búsquedas de BLASTP</h2>
+<p>El objetivo es encontrar la proteína de Blochmannia ocreatus que más se parece a cada una de las proteínas de Buchnera aphidicola, y viceversa.</p>
 </section>
-<section id="bibliografía" class="level1 unnumbered">
+<section id="de-buchnera-aphidicola-hacia-blochmannia-ocreatus" class="level2">
+<h2 class="anchored" data-anchor-id="de-buchnera-aphidicola-hacia-blochmannia-ocreatus">De Buchnera aphidicola hacia Blochmannia ocreatus</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">blastp</span> <span class="at">-query</span> ../../data/buchnera.fa <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-db</span> ../../data/blochmannia <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-out</span> buc2blo.txt <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-outfmt</span> <span class="st">&#39;6 qseqid sseqid qlen slen length evalue bitscore&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">-max_target_seqs</span> 1 <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="de-blochmannia-ocreatus-hacia-buchnera-aphidicola" class="level2">
+<h2 class="anchored" data-anchor-id="de-blochmannia-ocreatus-hacia-buchnera-aphidicola">De Blochmannia ocreatus hacia Buchnera aphidicola</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">blastp</span> <span class="at">-query</span> ../../data/blochmannia.fa <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-db</span> ../../data/buchnera <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-out</span> blo2buc.txt <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-outfmt</span> <span class="st">&#39;6 qseqid sseqid qlen slen length evalue bitscore&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">-max_target_seqs</span> 1 <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="comparación-de-resultados" class="level2">
+<h2 class="anchored" data-anchor-id="comparación-de-resultados">Comparación de resultados</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>buc2blo <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>   <span class="st">&#39;buc2blo.txt&#39;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>   <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&#39;query&#39;</span>, <span class="st">&#39;subject&#39;</span>, <span class="st">&#39;qlen&#39;</span>, <span class="st">&#39;slen&#39;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                 <span class="st">&#39;length&#39;</span>, <span class="st">&#39;evalue&#39;</span>, <span class="st">&#39;bitscore&#39;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>blo2buc <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>   <span class="st">&#39;blo2buc.txt&#39;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>   <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&#39;query&#39;</span>, <span class="st">&#39;subject&#39;</span>, <span class="st">&#39;qlen&#39;</span>, <span class="st">&#39;slen&#39;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                 <span class="st">&#39;length&#39;</span>, <span class="st">&#39;evalue&#39;</span>, <span class="st">&#39;bitscore&#39;</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Echa un vistazo a estas tablas de resultados. ¿Sabrías identificar las parejas de proteínas que son recíprocamente la que más se parece una a la otra?</p>
+</div>
+</div>
+<p>He usado la funcíon merge. Esta función permite cruzar ambas tablas haciendo coincidir las columnas query y subject de una con las columnas invertidas (subject, query) de la otra. De este modo, se seleccionan únicamente aquellas parejas en las que la proteína A tiene como mejor coincidencia a la proteína B, y viceversa (A -&gt; B y B -&gt; A). Las proteínas que coinciden son ortólogas.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>coincidencias <span class="ot">&lt;-</span> <span class="fu">merge</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  buc2blo,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  blo2buc,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">by.x =</span> <span class="fu">c</span>(<span class="st">&quot;query&quot;</span>, <span class="st">&quot;subject&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">by.y =</span> <span class="fu">c</span>(<span class="st">&quot;subject&quot;</span>, <span class="st">&quot;query&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;query&quot;</span>, <span class="st">&quot;subject&quot;</span>)]</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Qué datos te gustaría representar gráficamente para ganar confianza en que los resultados son correctos y tienen sentido?</p>
+</div>
+</div>
+<p>El lenght para ver que tienen la misma longitud, histogramas de bitscore y el e-value. Las coincidencias deberían tener un bitscore alto y un e-value bajo.</p>
+</section>
+<section id="ejercicio-2.-psi-blast" class="level2">
+<h2 class="anchored" data-anchor-id="ejercicio-2.-psi-blast">Ejercicio 2. PSI-BLAST</h2>
+<p>Tras descargar la base de datos de Swissprot para BLAST, procedo a realizar el segundo ejercicio.</p>
+<p>Esto lo hago primero con la porteína P39615 que srive como ejemplo:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Como Swissprot debería estar ya descargada en `../../data`, podemos sacar</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># de ahí la secuencia de la proteína escogida:</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">blastdbcmd</span> <span class="at">-db</span> ../../data/swissprot <span class="at">-entry</span> P39615 <span class="at">-out</span> P39615.fa</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Y ahora la usamos como query en psi-blast:</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ex">psiblast</span> <span class="at">-db</span> ../../data/swissprot <span class="dt">\</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">-query</span> P39615.fa <span class="dt">\</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">-out</span> P39615.blastout.txt <span class="dt">\</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">-evalue</span> 0.1 <span class="dt">\</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">-outfmt</span> 7 <span class="dt">\</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">-inclusion_ethresh</span> 0.001 <span class="dt">\</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">-num_iterations</span> 7 <span class="dt">\</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">-matrix</span> BLOSUM62 <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Ahora procedo a hacerlo con la proteína B1AJI8:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Como Swissprot debería estar ya descargada en `../../data`, podemos sacar</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># de ahí la secuencia de la proteína escogida:</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">blastdbcmd</span> <span class="at">-db</span> ../../data/swissprot <span class="at">-entry</span> B1AJI8 <span class="at">-out</span> B1AJI8.fa</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Y ahora la usamos como query en psi-blast:</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ex">psiblast</span> <span class="at">-db</span> ../../data/swissprot <span class="dt">\</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">-query</span> B1AJI8.fa <span class="dt">\</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">-out</span> B1AJI8.blastout.txt <span class="dt">\</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">-evalue</span> 0.1 <span class="dt">\</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">-outfmt</span> 7 <span class="dt">\</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">-inclusion_ethresh</span> 0.001 <span class="dt">\</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">-num_iterations</span> 7 <span class="dt">\</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">-matrix</span> BLOSUM62 <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>P39615 y B1AJI8 muestran homología clara, pero no parecen ser ortólogos muy cercanos, ya que entre ambas secuencias la identidad ronda aproximadamente el 39–44% con alineamientos significativos, mientras que P39615 presenta varios hits muy próximos y conservados por encima del 70–80% de identidad, lo que sugiere una familia más compacta alrededor de esta proteína. En cambio, B1AJI8 también tiene un homólogo casi idéntico, pero después desciende rápidamente a identidades cercanas al 42–46%, por lo que parece una secuencia más divergente dentro del mismo grupo funcional o de una subfamilia relacionada.</p>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Consulta la ayuda de <code>psiblast</code> y asegúrate de entender para qué sirven los argumentos que hemos usado. Por ejemplo, ¿cuál es la diferencia entre <code>-evalue</code> y <code>-inclusion_ethresh</code>?¿Cómo harías que la búsqueda fuera más sensible todavía?</p>
+</div>
+</div>
+<p>En este comando de PSI-BLAST, el parámetro <code>-evalue</code> sirve para establecer el umbral máximo de E-value que tendrán los alineamientos mostrados en la salida final. En este caso, al usar <code>-evalue 0.1</code>, se mostrarán todas las secuencias cuyo alineamiento tenga un E-value igual o inferior a 0.1. Sin embargo, el parámetro <code>-inclusion_ethresh</code> tiene una función diferente y más importante en PSI-BLAST: determina qué secuencias se incorporan a la matriz PSSM (<em>Position-Specific Scoring Matrix</em>) en cada iteración. Al usar <code>-inclusion_ethresh 0.001</code>, solo las secuencias con E-value igual o menor que 0.001 se consideran suficientemente significativas como para contribuir a refinar el perfil evolutivo en las siguientes rondas. Por tanto, una secuencia puede aparecer en los resultados finales gracias a <code>-evalue</code>, pero no necesariamente formar parte de la PSSM si no supera el umbral más estricto de <code>-inclusion_ethresh</code>.</p>
+<p>Para hacer la búsqueda todavía más sensible y detectar homologías evolutivas más lejanas, se podrían aumentar el número de iteraciones, utilizar matrices de sustitución más permisivas como <code>BLOSUM45</code> o <code>PAM30</code>, aumentar ligeramente el valor de <code>-inclusion_ethresh</code> o el <code>-evalue</code>, e incluso desactivar filtros de baja complejidad con <code>-seg no</code>. No obstante, incrementar demasiado la sensibilidad también aumenta el riesgo de incorporar falsos positivos a la PSSM y degradar la calidad de las iteraciones posteriores.</p>
+</section>
+<section id="ejercicio-3.-origen-de-la-contaminación-en-un-archivo-fastq" class="level2">
+<h2 class="anchored" data-anchor-id="ejercicio-3.-origen-de-la-contaminación-en-un-archivo-fastq">Ejercicio 3. Origen de la contaminación en un archivo FASTQ</h2>
+<p>Descargado el archivo <code>contaminacion.fa.gz</code> procedo a realizar el ejercicio 3.</p>
+</section>
+<section id="selección-aleatoria-de-20-queries" class="level2">
+<h2 class="anchored" data-anchor-id="selección-aleatoria-de-20-queries">Selección aleatoria de 20 queries</h2>
+<p>Cada persona escogerá 20 secuencias al azar mediante las órdenes siguientes, y después compartiremos los resultados para tener una muestra más representativa.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;Biostrings&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>unmapped <span class="ot">&lt;-</span> <span class="fu">readDNAStringSet</span>(<span class="st">&quot;../../data/contaminacion.fa.gz&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(unmapped)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>muestra <span class="ot">&lt;-</span> unmapped[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, <span class="dv">20</span>)]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">writeXStringSet</span>(muestra, <span class="st">&quot;muestra.fa&quot;</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="blastn-remoto" class="level2">
+<h2 class="anchored" data-anchor-id="blastn-remoto">BLASTN remoto</h2>
+<p>La orden siguiente pide una sola secuencia (la más parecida) y alguna información sobre el alineamiento, para poder garantizar la calidad del resultado. Le pongo un <code>eval: false</code> porque me tardó mucho en ejecutar, unos 20 min. Creo que al poner el <code>if [ ! -e resultado.txt ]</code> debería no tardar tanto, pero por si acaso lo he puesto.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> resultado.txt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>   <span class="ex">blastn</span> <span class="at">-query</span> muestra.fa <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">-db</span> nr <span class="dt">\</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">-out</span> resultado.txt <span class="dt">\</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">-outfmt</span> <span class="st">&#39;6 qaccver saccver length qlen qstart qend evalue bitscore staxid&#39;</span> <span class="dt">\</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">-max_target_seqs</span> 1 <span class="dt">\</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">-remote</span> <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="identificación-taxonómica" class="level2">
+<h2 class="anchored" data-anchor-id="identificación-taxonómica">Identificación taxonómica</h2>
+<p>Con <code>datasets</code>y <code>dataformats</code>continuamos el análisis de los resultados obtenidos previamente.</p>
+<p>Al ejecutar el código, el error ocurre porque estoy generando el archivo <code>taxids.txt</code> como una única cadena de identificadores separados por comas, en lugar de pasar una lista de taxIDs como argumentos individuales al comando <code>datasets</code>. Al usar <code>$(cat taxids.txt)</code>, el programa recibe un único argumento no válido, lo que provoca el mensaje “Missing NCBI taxonomy identifiers”. Además, el aviso “Broken pipe” de <code>uniq</code> y el error de <code>paste</code> son efectos secundarios del fallo en el pipeline, ya que la ejecución se interrumpe cuando el comando principal no puede procesar correctamente los identificadores. Este texto lo ha generado la IA como explicación del error que no me dejaba ejecutar el código. A cambio me ha dado este código obviando el archivo <code>taxids.txt</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="va">IDS</span><span class="op">=</span><span class="va">$(</span><span class="fu">cut</span> <span class="at">-f</span> 9 resultado.txt <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-u</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&#39;\n&#39;</span> <span class="st">&#39; &#39;</span><span class="va">)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ex">../../bin/datasets</span> summary taxonomy taxon <span class="va">$IDS</span> <span class="at">--as-json-lines</span> <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">../../bin/dataformat</span> tsv taxonomy <span class="at">--template</span> tax-summary <span class="op">&gt;</span> taxreport.txt</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Puedes importar tanto los resultados del BLAST como el informe taxonómico a una sesión de R y determinar que fracción de las lecturas seleccionadas parecen proceder de un hemímptero y qué fracción proceden de otros organismos. ¿Tienen sentido los resultados? ¿Encuentras alguna secuencia de origen vegetal?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar resultados del BLAST</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>blast <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">&quot;resultado.txt&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(blast) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;qaccver&quot;</span>, <span class="st">&quot;saccver&quot;</span>, <span class="st">&quot;length&quot;</span>, <span class="st">&quot;qlen&quot;</span>, <span class="st">&quot;qstart&quot;</span>, <span class="st">&quot;qend&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">&quot;evalue&quot;</span>, <span class="st">&quot;bitscore&quot;</span>, <span class="st">&quot;staxid&quot;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar informe taxonómico</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>tax <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">&quot;taxreport.txt&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">check.names =</span> <span class="cn">FALSE</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Unir ambas tablas por el identificador taxonómico</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">merge</span>(blast, tax, <span class="at">by.x =</span> <span class="st">&quot;staxid&quot;</span>, <span class="at">by.y =</span> <span class="st">&quot;Taxid&quot;</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Clasificar las lecturas en Hemiptera u Otros</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>grupo <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(dat<span class="sc">$</span><span class="st">`</span><span class="at">Order name</span><span class="st">`</span> <span class="sc">==</span> <span class="st">&quot;Hemiptera&quot;</span>, <span class="st">&quot;Hemiptera&quot;</span>, <span class="st">&quot;Otros&quot;</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Contar lecturas por grupo</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>conteo_grupos <span class="ot">&lt;-</span> <span class="fu">table</span>(dat<span class="sc">$</span>grupo)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>fracciones_grupos <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(conteo_grupos)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar resultados</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(conteo_grupos)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Hemiptera     Otros 
+        8        18 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(fracciones_grupos)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Hemiptera     Otros 
+0.3076923 0.6923077 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ver qué taxones concretos aparecen</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>conteo_taxones <span class="ot">&lt;-</span> <span class="fu">table</span>(dat<span class="sc">$</span><span class="st">`</span><span class="at">Tax name</span><span class="st">`</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(conteo_taxones)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Buchnera aphidicola (Aphis aurantii)                Microlophium carnosum 
+                                  18                                    8 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Buscar posibles secuencias de origen vegetal</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>vegetales <span class="ot">&lt;-</span> <span class="fu">subset</span>(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  dat,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grepl</span>(<span class="st">&quot;Plantae|Viridiplantae&quot;</span>, <span class="st">`</span><span class="at">Kingdom name</span><span class="st">`</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>) <span class="sc">|</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grepl</span>(<span class="st">&quot;Plantae|Viridiplantae&quot;</span>, <span class="st">`</span><span class="at">Tax name</span><span class="st">`</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>) <span class="sc">|</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grepl</span>(<span class="st">&quot;Plantae|Viridiplantae&quot;</span>, <span class="st">`</span><span class="at">Group name</span><span class="st">`</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(vegetales)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] staxid                    qaccver                  
+ [3] saccver                   length                   
+ [5] qlen                      qstart                   
+ [7] qend                      evalue                   
+ [9] bitscore                  Query                    
+[11] Tax name                  Authority                
+[13] Rank                      Basionym                 
+[15] Basionym authority        Curator common name      
+[17] Has type material         Group name               
+[19] Domain/Realm name         Domain/Realm taxid       
+[21] Kingdom name              Kingdom taxid            
+[23] Phylum name               Phylum taxid             
+[25] Class name                Class taxid              
+[27] Order name                Order taxid              
+[29] Family name               Family taxid             
+[31] Genus name                Genus taxid              
+[33] Species name              Species taxid            
+[35] Scientific name is formal grupo                    
+&lt;0 rows&gt; (or 0-length row.names)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Guardar tablas opcionalmente</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(dat, <span class="st">&quot;blast_taxonomia_unida.txt&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">as.data.frame</span>(conteo_grupos), <span class="st">&quot;conteo_grupos.txt&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">as.data.frame</span>(fracciones_grupos), <span class="st">&quot;fracciones_grupos.txt&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(vegetales, <span class="st">&quot;secuencias_vegetales.txt&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+<p>El script ha sido generado por la IA y yo he procedido a analizar los resultados.</p>
+<p>Se importaron en R los archivos <code>resultado.txt</code> y <code>taxreport.txt</code> para combinar la información del alineamiento BLAST con la clasificación taxonómica de cada secuencia. El archivo r<code>esultado.txt</code> contiene, para cada lectura seleccionada, el identificador de la secuencia problema, el acceso del mejor hit, la longitud del alineamiento, la longitud total de la query, las coordenadas alineadas, el e-value, el bitscore y el identificador taxonómico (<code>staxid</code>). Por su parte, <code>taxreport.txt</code> permite traducir cada staxid a un organismo concreto y situarlo dentro de su clasificación biológica, incluyendo reino, filo, clase, orden, familia, género y especie.</p>
+<p>Tras unir ambas tablas mediante el identificador taxonómico, se obtuvo una tabla final en la que cada lectura queda asociada a su posible origen biológico. A partir de esta tabla se clasificaron las secuencias en dos grupos: aquellas cuyo orden taxonómico es Hemiptera y aquellas que pertenecen a otros organismos. El análisis mostró un total de 26 lecturas con hit, de las cuales 8 se asignaron a Hemiptera y 18 a otros organismos. Esto corresponde a una fracción del 30.8% para Hemiptera y del 69.2% para otros organismos.</p>
+<p>Al examinar con más detalle la identidad de los taxones detectados, se observó que las lecturas clasificadas como Hemiptera corresponden a Microlophium carnosum, mientras que las restantes se asignan a Buchnera aphidicola (Aphis aurantii). Por tanto, la fracción de lecturas que parecen proceder de un hemíptero es 8/26, mientras que la fracción procedente de otros organismos es 18/26. En este conjunto de datos, los “otros organismos” no representan una mezcla amplia de especies, sino una bacteria endosimbionte.</p>
+<p>Sí, los resultados tienen sentido biológico. Buchnera aphidicola es un endosimbionte obligado característico de los pulgones, y Microlophium carnosum es precisamente un pulgón perteneciente al orden Hemiptera, por lo que es esperable encontrar secuencias tanto del insecto como de su simbionte bacteriano.</p>
+<p>En cuanto a la posible presencia de secuencias de origen vegetal, no se detectó ninguna en los archivos analizados.</p>
+</section>
+<section id="notas" class="level2">
+<h2 class="anchored" data-anchor-id="notas">Notas</h2>
+<p>Busco haciendo un <code>blastp</code>y con un bucle compruebo si se encuentran primero en la búsqueda con BLASTP y luego en la búsqueda con PSI-BLAST.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extraer la secuencia desde SwissProt</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">blastdbcmd</span> <span class="at">-db</span> ../../data/swissprot <span class="dt">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">-entry</span> O59825 <span class="dt">\</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">-out</span> O59825.fa</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Ejecutar BLASTP</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ex">blastp</span> <span class="at">-db</span> ../../data/swissprot <span class="dt">\</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">-query</span> O59825.fa <span class="dt">\</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">-out</span> O59825.blastp.txt <span class="dt">\</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">-outfmt</span> <span class="st">&#39;6 qaccver saccver pident length evalue bitscore&#39;</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="fu">grep</span> <span class="at">-q</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">&quot;</span> O59825.blastp.txt<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">: ENCONTRADA&quot;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">: NO encontrada&quot;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Q9CC91: NO encontrada
+P39615: NO encontrada
+B1AJI8: NO encontrada
+P47343: NO encontrada
+Q5UPT2: NO encontrada
+Q6UDG6: NO encontrada
+A1AFY9: ENCONTRADA
+O59825: ENCONTRADA
+P30314: NO encontrada</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Como Swissprot debería estar ya descargada en `../../data`, podemos sacar</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co"># de ahí la secuencia de la proteína escogida:</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="ex">blastdbcmd</span> <span class="at">-db</span> ../../data/swissprot <span class="at">-entry</span> O59825 <span class="at">-out</span> O59825.fa</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Y ahora la usamos como query en psi-blast:</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="ex">psiblast</span> <span class="at">-db</span> ../../data/swissprot <span class="dt">\</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">-query</span> O59825.fa <span class="dt">\</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">-out</span> O59825.blastout.txt <span class="dt">\</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">-evalue</span> 0.1 <span class="dt">\</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">-outfmt</span> 7 <span class="dt">\</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">-inclusion_ethresh</span> 0.001 <span class="dt">\</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">-num_iterations</span> 7 <span class="dt">\</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">-matrix</span> BLOSUM62 <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="fu">grep</span> <span class="at">-q</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">&quot;</span> O59825.blastout.txt<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">: ENCONTRADA&quot;</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">: NO encontrada&quot;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Q9CC91: NO encontrada
+P39615: NO encontrada
+B1AJI8: NO encontrada
+P47343: NO encontrada
+Q5UPT2: NO encontrada
+Q6UDG6: NO encontrada
+A1AFY9: ENCONTRADA
+O59825: ENCONTRADA
+P30314: NO encontrada</code></pre>
+</div>
+</div>
+<p>Por ejemplo, escojo la proteína <code>O59825</code> y hago un <code>blastp</code>y con el bucle compruebo las proteínas encontradas y salen 2 y al hacer el <code>psiblast</code> también encuentro 2. Lo he probado también en <code>B1AJI8</code> y en <code>P39615</code> y en <code>B1AJI8</code> encuentra 5 tanto en <code>blastp</code>como en <code>psiblast</code> y en <code>P39615</code>4 (quiero recordar).</p>
+<p>Me imagino que no estoy haciendo bien el blastp o algo, pero no encuentro la posible solución. He intentado todo lo que he podido, también lo he hecho buscando por la web del NCBI, pero da tantas proteínas que es difícil identificarlas.</p>
+<p>Me animé, pero no lo logré :(</p>
+</section>
 
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">Bibliografía</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
-<div id="ref-Bruna2023" class="csl-entry" role="listitem">
-Bruna, T., H. Li, J. Guhlin, D. Honsel, S. Herbold, M. Stanke, N. Nenasheva, M. Ebel, L. Gabriel, y K. J. Hoff. 2023. <span>«Galba: genome annotation with miniprot and <span>AUGUSTUS</span>»</span>. <em>BMC Bioinformatics</em> 24: 327. <a href="https://doi.org/10.1186/s12859-023-05449-z">https://doi.org/10.1186/s12859-023-05449-z</a>.
-</div>
-<div id="ref-Flynn2020" class="csl-entry" role="listitem">
-Flynn, Jullien M., Robert Hubley, Clément Goubert, Jeb Rosen, Andrew G. Clark, Cédric Feschotte, y Arian F. Smit. 2020. <span>«RepeatModeler2 for automated genomic discovery of transposable element families»</span>. <em>Proceedings of the National Academy of Sciences</em> 117 (17): 9451-57. <a href="https://doi.org/10.1073/pnas.1921046117">https://doi.org/10.1073/pnas.1921046117</a>.
-</div>
-<div id="ref-Li2023" class="csl-entry" role="listitem">
-Li, Heng. 2023. <span>«Protein-to-genome alignment with miniprot»</span>. <em>Bioinformatics</em> 39 (1): btad014. <a href="https://doi.org/10.1093/bioinformatics/btad014">https://doi.org/10.1093/bioinformatics/btad014</a>.
-</div>
-</div></section></div></main>
+</main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {

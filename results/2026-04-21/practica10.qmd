@@ -1,13 +1,26 @@
 ---
-title: "practica10"
-format: html
-editor: visual
+title: "Práctica 10. Ensamblaje de genomas"
+lang: es
+date: today
+execute: 
+  output: true
+  error: true
+engine: knitr
 bibliography: ../../doc/references.bib
+language:
+   title-block-published: "Última actualización:"
+   section-title-references: "Bibliografía"
+format:
+   html:
+      embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 ## DATOS
 
-El primero paso es instalar hifiasm, no he podido hacerlo a través del código proporciondo usando git clone, poniendo el PATH bin, etc. Lo he instalado mediante conda, creando un entorno para poder trabajar con hifiasm.
+Vamos a usar lecturas HiFi generadas por [@Rabanal2022]. El primero paso es instalar hifiasm, no he podido hacerlo a través del código proporciondo usando git clone, poniendo el PATH bin, etc. Lo he instalado mediante conda, creando un entorno para poder trabajar con hifiasm.
 
 Con este código comprobamos que el entorno de conda está activo y nuestro codigo de rstudio está bajo este entorno.
 
@@ -22,7 +35,7 @@ Una vez descargados también el archivo `At4.10.fa.gz` podemos empezar la práct
 ::: {.callout-note icon="false"}
 ## Ejercicio 1
 
-¿Cuántas secuencias contiene el archivo? ¿Qué longitudes mínima, media y máxima tienen las secuencias? ¿Cuál es el número total de bases?
+1. ¿Cuántas secuencias contiene el archivo? ¿Qué longitudes mínima, media y máxima tienen las secuencias? ¿Cuál es el número total de bases?
 
 Lo primero que he hecho es descargar seqkit, una herramienta que trabaja con arhivos FASTA y FASTQ. Obtengo todas estas preguntas poniendo el siguiente comando:
 
@@ -32,7 +45,7 @@ seqkit stats ../../data/At4.10.fa.gz
 
 num_seqs = cuantas secuencias sum_len = número total de bases min_len = longitud mínima avg_len = longitud media max_len = longitud máxima
 
-Si se estimara que el genoma a ensamblar fuera de sólo 19 millones de bases, ¿cuál sería la cobertura esperada?
+2. Si se estimara que el genoma a ensamblar fuera de sólo 19 millones de bases, ¿cuál sería la cobertura esperada?
 
 Cobertura = Total de bases/ Tamaño del genoma
 
@@ -57,19 +70,19 @@ fi
 ```
 
 ::: {.callout-note icon="false"}
-
 ## Ejercicio 2
+
 Consulta la ayuda de `hifiasm` (`hifiasm -h`) y contesta las preguntas siguientes:
 
-¿Los parámetros corresponden al ensamblaje de un genoma haploide o diploide?
+1. ¿Los parámetros corresponden al ensamblaje de un genoma haploide o diploide?
 
 Los parámetros corresponden a un ensamblaje diploide, ya que hifiasm está diseñado para separar haplotipos materno y paterno.
 
-¿Qué nivel de eliminación de duplicaciones hemos aplicado? (El paso de eliminar duplicaciones sirve para que las zonas de alta heterocigosidad no sean ensambladas como contigs diferentes).
+2. ¿Qué nivel de eliminación de duplicaciones hemos aplicado? (El paso de eliminar duplicaciones sirve para que las zonas de alta heterocigosidad no sean ensambladas como contigs diferentes).
 
 En el comando del ensamblaje aparece -f 0, eso significa que no hay eliminación de duplicaciones.
 
-Si tuvieramos lecturas ultra-largas, ¿con qué opción o argumento añadiríamos esa información?
+3. Si tuvieramos lecturas ultra-largas, ¿con qué opción o argumento añadiríamos esa información?
 
 Se añadirían mediante la opción --ul, que permite incorporar lecturas ultra-largas al ensamblaje.
 :::
@@ -77,25 +90,67 @@ Se añadirían mediante la opción --ul, que permite incorporar lecturas ultra-l
 ## Evaluación del resultado
 
 ::: {.callout-note icon="false"}
-
 ## Ejercicio 3
+
 Consulta la descripción de los archivos de salida que encontrarás en este enlace y contesta las preguntas siguientes:
 
-¿Dónde están las secuencias que componen el ensamblaje?
+1. ¿Dónde están las secuencias que componen el ensamblaje?
 
-En los archivos .gfa, ¿qué son las líneas que empiezan por ‘A’?
+Las secuencias que componen el ensamblaje están en los archivos `.gfa`, concretamente en las líneas `S` de esos ficheros, que contienen la secuencia de cada segmento del ensamblaje
 
-¿Qué información tiene los archivos .bed?
+2. En los archivos .gfa, ¿qué son las líneas que empiezan por ‘A’?
 
-¿Cuál es la cobertura media estimada de las secuencias homocigotas?
+En los archivos `.gfa`, las líneas que empiezan por `A` contienen la información de las lecturas usadas para construir cada contig o unitig, incluyendo nombre del contig/unitig, posición, hebra, nombre de la lectura, coordenadas de la parte usada, identificador de la read y estado haplotípico.
 
-¿Y la de las heterocigotas?
+3. ¿Qué información tiene los archivos .bed?
+
+Los archivos `.bed` contienen las coordenadas de las regiones de baja calidad (low quality regions) en formato BED.
+
+4. ¿Cuál es la cobertura media estimada de las secuencias homocigotas?
+
+La cobertura media estimada de las secuencias homocigotas es 57X
+
+5. ¿Y la de las heterocigotas?
+
+La cobertura media estimada de las secuencias heterocigotas es 28X 
+
 :::
-
 
 ```{bash}
 awk '(/^S/){print ">" $2 "\n" $3}' asm1/At4.bp.p_ctg.gfa > asm1/At4.fa
 ```
+
+## Calidad del ensamblaje
+Voy a descargar `compleasm` [@Huang2023] usando `conda`. He tenido que instalar `mamba` porque desde
+`conda`no me dejaba descargarlo. Con esto no he podido por problemas de dependecias
+entre `conda`y `compleasm`, he creado un entorno a través de un comando que me ha dado la IA.
+No sé si funcionará. 
+He intentado todas las opciones que me da la IA, pero ninguna funciona, el problema 
+es que al instalar `compleasm` desde `conda`se generan un problema de depencias en `sepp`
+y `dendropy`que sinceramente no sé que son, pero es lo que me pone la IA. 
+
+También lo he intentado por una herramienta llamada `Docker`, pero entre que no sé como funciona
+y que la IA en este caso no me ayudó mucho pues no llegué muy lejos. 
+
+Después de un par de horas intentadolo no soy capaz.
+Sólo me queda intentarlo por la máquina virtual, pero hoy 9/05/2026 no lo voy a intentar.
+Si lees estos mensajes es que no he podido intentarlo por la máquina virtual, lo siento. 
+
+## Visualización del grafo
+
+He instalado `bdandage`y he realiza dos grafos:
+El primero es del archivo `At4.bp.p_utg.gfa` de los unitigs procesados y el segundo es del
+archivo `At4.bp.p_ctg.gfa`de los primary contigs. 
+
+![Grafo de unitigs procesados](unitigs.png){#fig-unitigs fig-align="center"}
+
+![Grafo de contigs primarios](primary.png){#fig-primary fig-align="center"}
+
+No he puesto los nombre de cada fragmento porque me parecía muy saturado. Tampoco sé muy bien como
+interpretar estos grafos. Entiendo que en el primero los puntos más pequeños son estrcuturas repetitivas, no lo sé con claridad. 
+
+## Bibliografía
+
 
 
 

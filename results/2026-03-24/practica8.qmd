@@ -1,27 +1,36 @@
 ---
 title: "Práctica 8. BLAST"
-author: "Raúl RF"
-format: html
-editor: visual
+lang: es
+date: today
+execute: 
+  output: true
+  error: true
+engine: knitr
 bibliography: ../../doc/references.bib
+language:
+   title-block-published: "Última actualización:"
+   section-title-references: "Bibliografía"
+format:
+   html:
+      embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-Para instalar ncbi-blast+ en macOS se puede hacer desde el terminal ejecutando:
+Para instalar ncbi-blast+ en macOS se puede hacer desde el terminal
+ejecutando:
 
+`brew install blast blastn -version` 
 
-brew install blast
-blastn -version #verificar la instalación
-
-
-datasets y dataformat ya se encuentran instalados de la práctica 4. Por último, se tiene que instalar Biostrings ejecutando:
-
-
-BiocManager::install('Biostrings')
+`datasets` y `dataformat` ya se encuentran instalados de la práctica 4. Por
+último, se tiene que instalar `Biostrings` a través de `Bioconductor`:
 
 
 ## Ejercicio 1. Identificación aproximada de ortólogos
 
-Tras descargar el proteoma de Buchnera aphidicola (107806) y Blochmannia ocreatus (251538), procedo a realizar el primer ejercicio.
+Tras descargar el proteoma de Buchnera aphidicola (107806) y Blochmannia
+ocreatus (251538), procedo a realizar el primer ejercicio.
 
 ## Enmascarar e indexar los proteomas
 
@@ -70,7 +79,8 @@ fi
 
 ## Realizar las búsquedas de BLASTP
 
-El objetivo es encontrar la proteína de Blochmannia ocreatus que más se parece a cada una de las proteínas de Buchnera aphidicola, y viceversa.
+El objetivo es encontrar la proteína de Blochmannia ocreatus que más se
+parece a cada una de las proteínas de Buchnera aphidicola, y viceversa.
 
 ## De Buchnera aphidicola hacia Blochmannia ocreatus
 
@@ -80,7 +90,7 @@ blastp -query ../../data/buchnera.fa \
        -out buc2blo.txt \
        -outfmt '6 qseqid sseqid qlen slen length evalue bitscore' \
        -evalue 0.001 \
-       -max_target_seqs 1
+       -max_target_seqs 1 2> /dev/null
 ```
 
 ## De Blochmannia ocreatus hacia Buchnera aphidicola
@@ -91,7 +101,7 @@ blastp -query ../../data/blochmannia.fa \
        -out blo2buc.txt \
        -outfmt '6 qseqid sseqid qlen slen length evalue bitscore' \
        -evalue 0.001 \
-       -max_target_seqs 1
+       -max_target_seqs 1 2> /dev/null
 ```
 
 ## Comparación de resultados
@@ -112,10 +122,17 @@ blo2buc <- read.table(
 ::: {.callout-note icon="false"}
 ## Nota
 
-Echa un vistazo a estas tablas de resultados. ¿Sabrías identificar las parejas de proteínas que son recíprocamente la que más se parece una a la otra?
+Echa un vistazo a estas tablas de resultados. ¿Sabrías identificar las
+parejas de proteínas que son recíprocamente la que más se parece una a
+la otra?
 :::
 
-He usado la funcíon merge. Esta función permite cruzar ambas tablas haciendo coincidir las columnas query y subject de una con las columnas invertidas (subject, query) de la otra. De este modo, se seleccionan únicamente aquellas parejas en las que la proteína A tiene como mejor coincidencia a la proteína B, y viceversa (A -\> B y B -\> A). Las proteínas que coinciden son ortólogas.
+He usado la funcíon merge. Esta función permite cruzar ambas tablas
+haciendo coincidir las columnas query y subject de una con las columnas
+invertidas (subject, query) de la otra. De este modo, se seleccionan
+únicamente aquellas parejas en las que la proteína A tiene como mejor
+coincidencia a la proteína B, y viceversa (A -\> B y B -\> A). Las
+proteínas que coinciden son ortólogas.
 
 ```{r}
 coincidencias <- merge(
@@ -129,11 +146,292 @@ coincidencias <- merge(
 ::: {.callout-note icon="false"}
 ## Nota
 
-¿Qué datos te gustaría representar gráficamente para ganar confianza en que los resultados son correctos y tienen sentido?
+¿Qué datos te gustaría representar gráficamente para ganar confianza en
+que los resultados son correctos y tienen sentido?
 :::
 
-El lenght para ver que tienen la misma longitud, histogramas de bitscore y el e-value. Las coincidencias deberían tener un bitscore alto y un e-value bajo.
+El lenght para ver que tienen la misma longitud, histogramas de bitscore
+y el e-value. Las coincidencias deberían tener un bitscore alto y un
+e-value bajo.
 
 ## Ejercicio 2. PSI-BLAST
 
-Tras descargar la base de datos de Swissprot para BLAST, procedo a realizar el segundo ejercicio.
+Tras descargar la base de datos de Swissprot para BLAST, procedo a
+realizar el segundo ejercicio.
+
+Esto lo hago primero con la porteína P39615 que srive como ejemplo:
+
+```{bash}
+# Como Swissprot debería estar ya descargada en `../../data`, podemos sacar
+# de ahí la secuencia de la proteína escogida:
+blastdbcmd -db ../../data/swissprot -entry P39615 -out P39615.fa
+
+# Y ahora la usamos como query en psi-blast:
+psiblast -db ../../data/swissprot \
+         -query P39615.fa \
+         -out P39615.blastout.txt \
+         -evalue 0.1 \
+         -outfmt 7 \
+         -inclusion_ethresh 0.001 \
+         -num_iterations 7 \
+         -matrix BLOSUM62 2> /dev/null
+```
+
+Ahora procedo a hacerlo con la proteína B1AJI8:
+
+```{bash}
+# Como Swissprot debería estar ya descargada en `../../data`, podemos sacar
+# de ahí la secuencia de la proteína escogida:
+blastdbcmd -db ../../data/swissprot -entry B1AJI8 -out B1AJI8.fa
+
+# Y ahora la usamos como query en psi-blast:
+psiblast -db ../../data/swissprot \
+         -query B1AJI8.fa \
+         -out B1AJI8.blastout.txt \
+         -evalue 0.1 \
+         -outfmt 7 \
+         -inclusion_ethresh 0.001 \
+         -num_iterations 7 \
+         -matrix BLOSUM62 2> /dev/null
+```
+
+P39615 y B1AJI8 muestran homología clara, pero no parecen ser ortólogos
+muy cercanos, ya que entre ambas secuencias la identidad ronda
+aproximadamente el 39–44% con alineamientos significativos, mientras que
+P39615 presenta varios hits muy próximos y conservados por encima del
+70–80% de identidad, lo que sugiere una familia más compacta alrededor
+de esta proteína. En cambio, B1AJI8 también tiene un homólogo casi
+idéntico, pero después desciende rápidamente a identidades cercanas al
+42–46%, por lo que parece una secuencia más divergente dentro del mismo
+grupo funcional o de una subfamilia relacionada.
+
+::: {.callout-note icon="false"}
+## Nota
+
+Consulta la ayuda de `psiblast` y asegúrate de entender para qué sirven
+los argumentos que hemos usado. Por ejemplo, ¿cuál es la diferencia
+entre `-evalue` y `-inclusion_ethresh`?¿Cómo harías que la búsqueda
+fuera más sensible todavía?
+:::
+
+En este comando de PSI-BLAST, el parámetro `-evalue` sirve para
+establecer el umbral máximo de E-value que tendrán los alineamientos
+mostrados en la salida final. En este caso, al usar `-evalue 0.1`, se
+mostrarán todas las secuencias cuyo alineamiento tenga un E-value igual
+o inferior a 0.1. Sin embargo, el parámetro `-inclusion_ethresh` tiene
+una función diferente y más importante en PSI-BLAST: determina qué
+secuencias se incorporan a la matriz PSSM (*Position-Specific Scoring
+Matrix*) en cada iteración. Al usar `-inclusion_ethresh 0.001`, solo las
+secuencias con E-value igual o menor que 0.001 se consideran
+suficientemente significativas como para contribuir a refinar el perfil
+evolutivo en las siguientes rondas. Por tanto, una secuencia puede
+aparecer en los resultados finales gracias a `-evalue`, pero no
+necesariamente formar parte de la PSSM si no supera el umbral más
+estricto de `-inclusion_ethresh`.
+
+Para hacer la búsqueda todavía más sensible y detectar homologías
+evolutivas más lejanas, se podrían aumentar el número de iteraciones,
+utilizar matrices de sustitución más permisivas como `BLOSUM45` o
+`PAM30`, aumentar ligeramente el valor de `-inclusion_ethresh` o el
+`-evalue`, e incluso desactivar filtros de baja complejidad con
+`-seg no`. No obstante, incrementar demasiado la sensibilidad también
+aumenta el riesgo de incorporar falsos positivos a la PSSM y degradar la
+calidad de las iteraciones posteriores.
+
+## Ejercicio 3. Origen de la contaminación en un archivo FASTQ
+
+Descargado el archivo `contaminacion.fa.gz` procedo a realizar el
+ejercicio 3.
+
+## Selección aleatoria de 20 queries
+
+Cada persona escogerá 20 secuencias al azar mediante las órdenes
+siguientes, y después compartiremos los resultados para tener una
+muestra más representativa.
+
+```{r}
+#| message: false
+#| warning: false
+
+library("Biostrings")
+
+unmapped <- readDNAStringSet("../../data/contaminacion.fa.gz")
+n <- length(unmapped)
+muestra <- unmapped[sample(1:n, 20)]
+writeXStringSet(muestra, "muestra.fa")
+```
+
+## BLASTN remoto
+
+La orden siguiente pide una sola secuencia (la más parecida) y alguna
+información sobre el alineamiento, para poder garantizar la calidad del
+resultado.
+Le pongo un `eval: false` porque me tardó mucho en ejecutar, unos 20 min. Creo que al
+poner el `if [ ! -e resultado.txt ]` debería no tardar tanto, pero por si acaso lo he puesto. 
+```{bash}
+#| eval: false
+if [ ! -e resultado.txt ]; then
+   blastn -query muestra.fa \
+          -db nr \
+          -out resultado.txt \
+          -outfmt '6 qaccver saccver length qlen qstart qend evalue bitscore staxid' \
+          -max_target_seqs 1 \
+          -evalue 0.001 \
+          -remote 2> /dev/null
+fi
+```
+
+## Identificación taxonómica
+
+Con `datasets`y `dataformats`continuamos el análisis de los resultados
+obtenidos previamente.
+
+Al ejecutar el código, el error ocurre porque estoy generando el archivo
+`taxids.txt` como una única cadena de identificadores separados por
+comas, en lugar de pasar una lista de taxIDs como argumentos
+individuales al comando `datasets`. Al usar `$(cat taxids.txt)`, el
+programa recibe un único argumento no válido, lo que provoca el mensaje
+“Missing NCBI taxonomy identifiers”. Además, el aviso “Broken pipe” de
+`uniq` y el error de `paste` son efectos secundarios del fallo en el
+pipeline, ya que la ejecución se interrumpe cuando el comando principal
+no puede procesar correctamente los identificadores. Este texto lo ha
+generado la IA como explicación del error que no me dejaba ejecutar el
+código. A cambio me ha dado este código obviando el archivo
+`taxids.txt`.
+
+```{bash}
+IDS=$(cut -f 9 resultado.txt | sort -u | tr '\n' ' ')
+
+../../bin/datasets summary taxonomy taxon $IDS --as-json-lines | \
+../../bin/dataformat tsv taxonomy --template tax-summary > taxreport.txt
+```
+
+::: {.callout-note icon="false"}
+## Nota
+
+Puedes importar tanto los resultados del BLAST como el informe
+taxonómico a una sesión de R y determinar que fracción de las lecturas
+seleccionadas parecen proceder de un hemímptero y qué fracción proceden
+de otros organismos. ¿Tienen sentido los resultados? ¿Encuentras alguna
+secuencia de origen vegetal?
+
+```{r}
+# Cargar resultados del BLAST
+blast <- read.delim("resultado.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+colnames(blast) <- c("qaccver", "saccver", "length", "qlen", "qstart", "qend",
+                     "evalue", "bitscore", "staxid")
+
+# Cargar informe taxonómico
+tax <- read.delim("taxreport.txt", sep = "\t", check.names = FALSE, stringsAsFactors = FALSE)
+
+# Unir ambas tablas por el identificador taxonómico
+dat <- merge(blast, tax, by.x = "staxid", by.y = "Taxid", all.x = TRUE)
+
+# Clasificar las lecturas en Hemiptera u Otros
+dat$grupo <- ifelse(dat$`Order name` == "Hemiptera", "Hemiptera", "Otros")
+
+# Contar lecturas por grupo
+conteo_grupos <- table(dat$grupo)
+fracciones_grupos <- prop.table(conteo_grupos)
+
+# Mostrar resultados
+print(conteo_grupos)
+print(fracciones_grupos)
+
+# Ver qué taxones concretos aparecen
+conteo_taxones <- table(dat$`Tax name`)
+print(conteo_taxones)
+
+# Buscar posibles secuencias de origen vegetal
+vegetales <- subset(
+  dat,
+  grepl("Plantae|Viridiplantae", `Kingdom name`, ignore.case = TRUE) |
+  grepl("Plantae|Viridiplantae", `Tax name`, ignore.case = TRUE) |
+  grepl("Plantae|Viridiplantae", `Group name`, ignore.case = TRUE)
+)
+
+print(vegetales)
+
+# Guardar tablas opcionalmente
+write.table(dat, "blast_taxonomia_unida.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(as.data.frame(conteo_grupos), "conteo_grupos.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(as.data.frame(fracciones_grupos), "fracciones_grupos.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(vegetales, "secuencias_vegetales.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+```
+:::
+El script ha sido generado por la IA y yo he procedido a analizar los resultados.
+
+Se importaron en R los archivos `resultado.txt` y `taxreport.txt` para combinar la información del alineamiento BLAST con la clasificación taxonómica de cada secuencia. El archivo r`esultado.txt` contiene, para cada lectura seleccionada, el identificador de la secuencia problema, el acceso del mejor hit, la longitud del alineamiento, la longitud total de la query, las coordenadas alineadas, el e-value, el bitscore y el identificador taxonómico (`staxid`). Por su parte, `taxreport.txt` permite traducir cada staxid a un organismo concreto y situarlo dentro de su clasificación biológica, incluyendo reino, filo, clase, orden, familia, género y especie.
+
+Tras unir ambas tablas mediante el identificador taxonómico, se obtuvo una tabla final en la que cada lectura queda asociada a su posible origen biológico. A partir de esta tabla se clasificaron las secuencias en dos grupos: aquellas cuyo orden taxonómico es Hemiptera y aquellas que pertenecen a otros organismos. El análisis mostró un total de 26 lecturas con hit, de las cuales 8 se asignaron a Hemiptera y 18 a otros organismos. Esto corresponde a una fracción del 30.8% para Hemiptera y del 69.2% para otros organismos.
+
+Al examinar con más detalle la identidad de los taxones detectados, se observó que las lecturas clasificadas como Hemiptera corresponden a Microlophium carnosum, mientras que las restantes se asignan a Buchnera aphidicola (Aphis aurantii). Por tanto, la fracción de lecturas que parecen proceder de un hemíptero es 8/26, mientras que la fracción procedente de otros organismos es 18/26. En este conjunto de datos, los “otros organismos” no representan una mezcla amplia de especies, sino una bacteria endosimbionte.
+
+Sí, los resultados tienen sentido biológico. Buchnera aphidicola es un endosimbionte obligado característico de los pulgones, y Microlophium carnosum es precisamente un pulgón perteneciente al orden Hemiptera, por lo que es esperable encontrar secuencias tanto del insecto como de su simbionte bacteriano.
+
+En cuanto a la posible presencia de secuencias de origen vegetal, no se detectó ninguna en los archivos analizados. 
+
+## Notas
+
+Busco haciendo un `blastp`y con un bucle compruebo si se encuentran primero en la búsqueda con BLASTP
+y luego en la búsqueda con PSI-BLAST. 
+```{bash}
+# Extraer la secuencia desde SwissProt
+blastdbcmd -db ../../data/swissprot \
+           -entry O59825 \
+           -out O59825.fa
+
+# Ejecutar BLASTP
+blastp -db ../../data/swissprot \
+       -query O59825.fa \
+       -out O59825.blastp.txt \
+       -evalue 0.001 \
+       -outfmt '6 qaccver saccver pident length evalue bitscore'
+```
+
+```{bash}
+for p in Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314
+do
+    if grep -q "$p" O59825.blastp.txt; then
+        echo "$p: ENCONTRADA"
+    else
+        echo "$p: NO encontrada"
+    fi
+done
+```
+```{bash}
+# Como Swissprot debería estar ya descargada en `../../data`, podemos sacar
+# de ahí la secuencia de la proteína escogida:
+blastdbcmd -db ../../data/swissprot -entry O59825 -out O59825.fa
+
+# Y ahora la usamos como query en psi-blast:
+psiblast -db ../../data/swissprot \
+         -query O59825.fa \
+         -out O59825.blastout.txt \
+         -evalue 0.1 \
+         -outfmt 7 \
+         -inclusion_ethresh 0.001 \
+         -num_iterations 7 \
+         -matrix BLOSUM62 2> /dev/null
+```
+
+```{bash}
+for p in Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314
+do
+    if grep -q "$p" O59825.blastout.txt; then
+        echo "$p: ENCONTRADA"
+    else
+        echo "$p: NO encontrada"
+    fi
+done
+```
+Por ejemplo, escojo la proteína `O59825` y hago un `blastp`y con el bucle compruebo las proteínas
+encontradas y salen 2 y al hacer el `psiblast` también encuentro 2. 
+Lo he probado también en `B1AJI8` y en `P39615` y en `B1AJI8` encuentra 5 tanto en 
+`blastp`como en `psiblast` y en `P39615`4 (quiero recordar). 
+
+Me imagino que no estoy haciendo bien el blastp o algo, pero no encuentro la posible solución.
+He intentado todo lo que he podido, también lo he hecho buscando por la web del NCBI, pero 
+da tantas proteínas que es difícil identificarlas. 
+
+Me animé, pero no lo logré :(
