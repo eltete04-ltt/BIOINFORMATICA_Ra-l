@@ -29,6 +29,11 @@ conda info --envs
 ```
 
 Una vez descargados también el archivo `At4.10.fa.gz` podemos empezar la práctica.
+```{bash}
+if [ ! -e ../../data/At4.10.fa ]; then
+  gunzip ../../data/At4.10.fa.gz
+fi
+```
 
 ## Revisión de los datos
 
@@ -37,13 +42,20 @@ Una vez descargados también el archivo `At4.10.fa.gz` podemos empezar la práct
 
 1. ¿Cuántas secuencias contiene el archivo? ¿Qué longitudes mínima, media y máxima tienen las secuencias? ¿Cuál es el número total de bases?
 
-Lo primero que he hecho es descargar seqkit, una herramienta que trabaja con arhivos FASTA y FASTQ. Obtengo todas estas preguntas poniendo el siguiente comando:
-
+Se puede utilizar el comando grep para buscar "\>" que hay delante de cada secuencia, eso contará el numero de secuencias
 ```{bash}
-seqkit stats ../../data/At4.10.fa.gz
+grep -c ">" ../../data/At4.10.fa
 ```
 
-num_seqs = cuantas secuencias sum_len = número total de bases min_len = longitud mínima avg_len = longitud media max_len = longitud máxima
+Ignoramos las cabeceras "\>" y contamos las bases de cada secuencia, luego se usan para encontrar la secuencia minima, maxima y media
+```{bash}
+grep -v "^>" ../../data/At4.10.fa | awk '{len=length($0); sum+=len; if(min==""){min=max=len}; if(len<min){min=len}; if(len>max){max=len}; count++} END {print "Mínima:", min; print "Media:", sum/count; print "Máxima:", max}'
+```
+
+Eliminamos las cabeceras y los saltos de linea y contamos todos los caracteres
+```{bash}
+grep -v "^>" ../../data/At4.10.fa | tr -d '\n' | wc -c
+```
 
 2. Si se estimara que el genoma a ensamblar fuera de sólo 19 millones de bases, ¿cuál sería la cobertura esperada?
 
@@ -135,6 +147,66 @@ y que la IA en este caso no me ayudó mucho pues no llegué muy lejos.
 Después de un par de horas intentadolo no soy capaz.
 Sólo me queda intentarlo por la máquina virtual, pero hoy 9/05/2026 no lo voy a intentar.
 Si lees estos mensajes es que no he podido intentarlo por la máquina virtual, lo siento. 
+
+**Aqui Yago al rescate con un fork y un Pull Request**
+
+Primero descargamos compleasm y lo descomprimimos en la carpeta de bin, todo con condicionales para eviar errores:
+```{bash}
+#| eval: false
+
+if [[ ! -d ~/bin ]]; then
+  mkdir -p ~/bin
+fi
+
+cd ~/bin
+
+if [ ! -d ~/bin/compleasm_kit ]; then
+  wget https://github.com/huangnengCSU/compleasm/releases/download/v0.2.7/compleasm-0.2.7_x64-linux.tar.bz2
+  tar -jxvf compleasm-0.2.7_x64-linux.tar.bz2
+  rm compleasm-0.2.7_x64-linux.tar.bz2
+fi
+```
+Instalar pandas de pyhton en WSL es tan fácil como tirar por la terminal de bash:
+```
+sudo apt update
+sudo apt install python3-pandas
+```
+
+Ahora corremos la evaluacion (puede tardar mas de 10 min):
+```{bash}
+#| message: false
+
+if [ ! -e asm1_eval/summary.txt ]; then
+   python3 ~/bin/compleasm_kit/compleasm.py run \
+      -t 6 -l brassicales -a asm1/At4.fa -o asm1_eval
+fi
+```
+Los archivos que crea la evaluación serán muy pesados, como lo único que importa para el repo es el log he añadido esto a un .gitignore:
+```
+asm1_eval/
+!asm1_eval/summary.txt
+```
+Podemos leer por pantalla el summary:
+```{bash}
+cat asm1_eval/summary.txt
+```
+
+::: {.callout-note icon="false" title="Ejercicio 4"}
+Consulta la ayuda de `compleasm.py` y averigua qué significan los argumentos utilizados.
+
+::: {.callout-important icon="false" title="Respuesta"}
+```{bash}
+python3 ~/bin/compleasm_kit/compleasm.py run -h
+```
+- t Permite dar un número de hilos de procesamiento, lo he subido a 6 porque mi ordenador personal me lo permite, un valor seguro es utilizar 2, pero depende de cada ordenador, cuantos mas hilos, más rápido correrá el proceso
+
+- l hace referencia al linaje del organismo que vamos a evaluar, en este caso *brassicales* y busca el conjunto de genes ortólogos que busca el programa
+
+- a da el archivo de entrada que se quiere evaluar, el genoma
+
+- o es la ruta de salida donde se guardarán los resultados
+:::
+:::
 
 ## Visualización del grafo
 
