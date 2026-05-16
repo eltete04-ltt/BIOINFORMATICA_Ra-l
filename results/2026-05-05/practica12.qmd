@@ -22,7 +22,7 @@ editor:
 
 He instalado el paquete de bioconductor `DESeq2`. También he descargado
 los archivos de datos `salmon.merged.gene_counts.tsv` y
-`dme_elev_samples.tsv`.
+`dme_elev_samples.tsv` de [@Zhao2015].
 
 ## Exploración de los datos
 
@@ -143,6 +143,8 @@ res
 ```{r}
 res_pop <- results(dds1, name = "population_panama_vs_maine")
 res_pop
+```
+```{r}
 res_temp <- results(dds1, name = "temp_high_vs_low")
 res_temp
 ```
@@ -186,6 +188,8 @@ plotMA(resShrink)
 ¿Sabrías hacer una gráfica volcán?
 
 ```{r}
+#| warning: false
+#| message: false
 #Crear una variable de significancia
 res_pop$Significancia <- "No Significativo"
 res_pop$Significancia[res_pop$padj < 0.1 & res_pop$log2FoldChange > 0] <- "Upregulated"
@@ -207,6 +211,8 @@ ggplot(df, aes(x = log2FoldChange, y = -log10(padj))) +
        y = "-log10 adjusted p-value")
 ```
 ```{r}
+#| warning: false
+#| message: false
 #Crear una variable de significancia
 res_temp$Significancia <- "No Significativo"
 res_temp$Significancia[res_temp$padj < 0.1 & res_temp$log2FoldChange > 0] <- "Upregulated"
@@ -253,5 +259,23 @@ El código aplica primero una transformación VST (variance stabilizing transfor
 
 ::: {.callout-note icon="false"}
 ## Ejercicio 6
+En este enlace analizan exactamente los mismos datos con otro paquete de R: `limma`. Una de sus conclusiones es se sobreexpresan más genes en temperatura baja que en temperatura alta. ¿Confirma tu análisis esta conclusión?
 
+En el análisis realizado, como expliqúe con anterioridad, 2418 genes está up-regulated, es decir, tiene un log2FoldChange positivo, entonces se expresa más cuando la temperatura es alta.
+2336 genes está down-regulated, es decir, tiene un log2FoldChange negativo, entonces se expresa más cuando la temperatura es baja.
+
+Por tanto se expresan más genes cuando la temperatura es alta que cuando la temperatura es baja y no se corresponde con el análisis de `limma`. 
+
+
+¿Cómo se comparan estos resultados con los tuyos?
+
+```{r}
+res_temp_df <- as.data.frame(res_temp)
+res_temp_df$gene <- rownames(res_temp_df)
+top10_temp <- res_temp_df[!is.na(res_temp_df$padj), ]
+top10_temp <- top10_temp[order(top10_temp$padj), ]
+head(top10_temp, 10)
+```
+Los genes más difereicialmente expresados en el análisis mediante `DESeq2`se corresponden a los que se han obtenido en el 
+análisis de `limma`. 
 :::
