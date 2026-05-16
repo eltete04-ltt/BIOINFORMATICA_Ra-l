@@ -1,5 +1,5 @@
 ---
-title: "Práctica 2. Mapeo de secuencias cortas"
+title: "Práctica 3. Mapeo de secuencias cortas"
 lang: es
 date: today
 execute: 
@@ -17,6 +17,10 @@ editor:
   markdown: 
     wrap: 72
 ---
+# A tener en cuenta
+
+Hay varios archivos de `DRR025089` y `DRR025090` que son generados durante la práctica que los he puesto en data,
+aunque deberían ir en results. Realmente he puesto todos en data, porque en el momento de hacer la práctica había algunos que tenían mucho tamaño, no me di cuenta y lo metí en github. Me dio una serie de errores y me llevó mi tiempo solucionar todo, por tanto he obtado que vayan en data para no complicarme en exceso. 
 
 # Preparación
 
@@ -103,8 +107,8 @@ otros).
 ```{bash}
 # Con la opción "-o /dev/null" nos deshacemos de los mensajes,
 # y con "-O referencia.fa" escogemos un nombre adecuado para el archivo.
-if [ ! -e referencia.fa ]; then
-   wget -o /dev/null -O referencia.fa \
+if [ ! -e ../../data/referencia.fa ]; then
+   wget -o /dev/null -O ../../data/referencia.fa \
         https://www.ebi.ac.uk/ena/browser/api/fasta/GCA_042137995.2 
 fi
 ```
@@ -133,7 +137,7 @@ caso de Bradyrhizobium japonicum ACCC 15027 presente 3. Tiene un
 cromosoma circular y dos plásmidos.
 
 ```{bash}
-grep -c '^>' referencia.fa 
+grep -c '^>' ../../data/referencia.fa 
 ```
 :::
 
@@ -230,23 +234,23 @@ generarlos de nuevo cada vez que compilemos este documento si el archivo
 final ya está presente en la carpeta de trabajo.
 
 ```{bash}
-if [ ! -e DRR025089.bam ]; then
+if [ ! -e ../../data/DRR025089.bam ]; then
    if [ ! -e DRR025089_unsorted.bam ]; then
-      if [ ! -e DRR025089.sam ]; then
+      if [ ! -e ../../data/DRR025089.sam ]; then
          if [ ! -e referencia.fa.bwt ]; then
             bwa index referencia.fa
          fi
          bwa mem -M -R '@RG\tID:DRR025089\tSM:SAMD00022947' \
                  -o DRR025089.sam \
-                 referencia.fa \
+                 ../../data/referencia.fa \
                  ../../data/DRR025089_1_clean.fastq \
                  ../../data/DRR025089_2_clean.fastq \
          1> bwa.log 2> bwa.err
       fi
-      samtools view -b -o DRR025089_unsorted.bam DRR025089.sam
+      samtools view -b -o DRR025089_unsorted.bam ../../data/DRR025089.sam
     fi
-    samtools sort -o DRR025089.bam DRR025089_unsorted.bam
-    samtools index DRR025089.bam
+    samtools sort -o ../../data/DRR025089.bam DRR025089_unsorted.bam
+    samtools index ../../data/DRR025089.bam
 fi
 ```
 
@@ -262,8 +266,8 @@ fi
 if [ ! -e ../../data/DRR025089.bam ]; then
 
     # Descargar referencia solo si no existe
-    if [ ! -e referencia.fa ]; then
-        wget -q -O referencia.fa \
+    if [ ! -e ../../data/referencia.fa ]; then
+        wget -q -O ../../data/referencia.fa \
         https://www.ebi.ac.uk/ena/browser/api/fasta/GCA_042137995.2
     fi
 
@@ -275,7 +279,7 @@ if [ ! -e ../../data/DRR025089.bam ]; then
     # Alineamiento
     if [ ! -e ../../data/DRR025089_unsorted.bam ]; then
         bwa mem -M -R '@RG\tID:DRR025089\tSM:SAMD00022947' \
-        referencia.fa \
+        ../../data/referencia.fa \
         ../../data/DRR025089_1_clean.fastq \
         ../../data/DRR025089_2_clean.fastq \
         > DRR025089.sam 2> bwa.err
@@ -289,7 +293,7 @@ if [ ! -e ../../data/DRR025089.bam ]; then
 
     # Borrar intermedios y referencia (opcional)
     rm -f DRR025089.sam ../../data/DRR025089_unsorted.bam
-    rm -f referencia.fa referencia.fa.*
+    rm -f ../../data/referencia.fa referencia.fa.*
 
 fi
 ```
@@ -302,7 +306,7 @@ if [ ! -e ../../data/DRR025089_merged.bam ]; then
 
 bwa mem -M \
 -R '@RG\tID:DRR025089\tSM:SAMD00022947' \
-referencia.fa \
+../../data/referencia.fa \
 ../../data/DRR025089_m_clean.fastq \
 > ../../data/DRR025089_merged.sam
 
@@ -326,18 +330,18 @@ archivo2.bam
 ```{bash}
 du -h ../../data/DRR025089_1_clean.fastq
 du -h ../../data/DRR025089_2_clean.fastq
-du -h referencia.fa
+du -h ../../data/referencia.fa
 du -h DRR025089.sam
 ```
 
 Unidades en Mb: 81, 81, 9.7 y 192, respectivamente. 5. Podíamos haber
 ahorrado algún paso aprovechando las *tuberías* de BASH:
 
-```         
+```{bash}
 bwa mem -M -R '@RG\tID:DRR025089\tSM:SAMD00022947' \
         referencia.fa DRR025089_1_clean.fastq DRR025089_2_clean.fastq | \
 samtools view -u - | \
-samtools sort - > DRR025089.bam
+samtools sort - > ../../data/DRR025089.bam
 ```
 
 Este estilo tiene también la ventaja de ser más rápido. ¿Crees que hay
@@ -411,8 +415,10 @@ genere un pico detectable en la distribución de cobertura.
 
 4.  Visualiza los alineamientos en el terminal con la orden siguiente:
 
-```         
-samtools tview DRR025089.bam referencia.fa
+```{bash}
+#| eval: false
+# No lo renderizo porque tarda mucho
+samtools tview ../../data/DRR025089.bam ../../data/referencia.fa
 ```
 :::
 
@@ -420,6 +426,6 @@ samtools tview DRR025089.bam referencia.fa
 
 ```{bash}
 if [ ! -e ../../data/DRR025089.vcf ]; then
-   freebayes -p 1 -f referencia.fa ../../data/DRR025089.bam > ../../data/DRR025089.vcf
+   freebayes -p 1 -f ../../data/referencia.fa ../../data/DRR025089.bam > ../../data/DRR025089.vcf
 fi
 ```

@@ -1,5 +1,5 @@
 ---
-title: "Búsquedas programáticas en Interpro"
+title: "Práctica 6. Búsquedas programáticas en Interpro"
 lang: es
 date: today
 execute: 
@@ -357,6 +357,7 @@ equinodermos que no aparecen en cordados. Vamos a comprobarlo con la función
 `setdiff()`, que devuelve los elementos del primer vector que no aparecen en el
 segundo:
 
+Al ejecutar el siguiente código va a poner error y que el objeto equinodermata no se encuentra. Esto se debe a que a la hora de renderizar he puesto `eval: false` en el bloque de código donde se crea dicho objeto y pasa lo mismo con chordata, porque tarda mucho en procesar, al menos a mí. 
 ```{r}
 library(kableExtra)
 SoloEquinodermos <- setdiff(equinodermata$accession, chordata$accession)

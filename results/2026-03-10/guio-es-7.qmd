@@ -1,5 +1,5 @@
 ---
-title: "Visualización y exploración de datos"
+title: "Práctica 7. Visualización y exploración de datos"
 lang: es
 date: today
 execute: 

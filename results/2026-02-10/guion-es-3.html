@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Práctica 2. Mapeo de secuencias cortas</title>
+<title>Práctica 3. Mapeo de secuencias cortas</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3104,7 +3104,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Práctica 2. Mapeo de secuencias cortas</h1>
+<h1 class="title">Práctica 3. Mapeo de secuencias cortas</h1>
 </div>
 
 
@@ -3115,7 +3115,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Última actualización:</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">3 de mayo de 2026</p>
+      <p class="date">16 de mayo de 2026</p>
     </div>
   </div>
   
@@ -3127,6 +3127,10 @@ vertical-align: -.125em;
 </header>
 
 
+<section id="a-tener-en-cuenta" class="level1">
+<h1>A tener en cuenta</h1>
+<p>Hay varios archivos de <code>DRR025089</code> y <code>DRR025090</code> que son generados durante la práctica que los he puesto en data, aunque deberían ir en results. Realmente he puesto todos en data, porque en el momento de hacer la práctica había algunos que tenían mucho tamaño, no me di cuenta y lo metí en github. Me dio una serie de errores y me llevó mi tiempo solucionar todo, por tanto he obtado que vayan en data para no complicarme en exceso.</p>
+</section>
 <section id="preparación" class="level1">
 <h1>Preparación</h1>
 <p>Usaremos los programas siguientes:</p>
@@ -3186,8 +3190,8 @@ Desafío
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Con la opción &quot;-o /dev/null&quot; nos deshacemos de los mensajes,</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># y con &quot;-O referencia.fa&quot; escogemos un nombre adecuado para el archivo.</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> referencia.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>   <span class="fu">wget</span> <span class="at">-o</span> /dev/null <span class="at">-O</span> referencia.fa <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/referencia.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>   <span class="fu">wget</span> <span class="at">-o</span> /dev/null <span class="at">-O</span> ../../data/referencia.fa <span class="dt">\</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        https://www.ebi.ac.uk/ena/browser/api/fasta/GCA_042137995.2 </span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -3208,7 +3212,7 @@ Preguntas
 </ul>
 <p>grep -c ’^&gt;’referencia.fa cuenta cuantos &gt; hay en el archivo. En el caso de Bradyrhizobium japonicum ACCC 15027 presente 3. Tiene un cromosoma circular y dos plásmidos.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&#39;^&gt;&#39;</span> referencia.fa </span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&#39;^&gt;&#39;</span> ../../data/referencia.fa </span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>3</code></pre>
 </div>
@@ -3330,31 +3334,24 @@ fastp v1.1.0, time used: 3 seconds</code></pre>
 <h1>Mapeo</h1>
 <p>El objetivo de esta sección es alinear las lecturas cortas al genoma de referencia, mediante el programa <code>bwa</code>. El archivo final será un archivo BAM <em>ordenado</em>. Para obtener ese archivo es necesario generar algunos archivos auxiliares: primero, el índice del genoma de referencia, después los alineamientos en formato SAM (no comprimidos) y finalmente un archivo BAM, que es la versión comprimida del SAM (todavía no ordenado). La jerarquía de condiciones de ejecución siguiente permitirá borrar los archivos auxiliares, para ahorrar espacio, y no tener que generarlos de nuevo cada vez que compilemos este documento si el archivo final ya está presente en la carpeta de trabajo.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> DRR025089.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> DRR025089_unsorted.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> DRR025089.sam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089.sam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>         <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> referencia.fa.bwt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>            <span class="ex">bwa</span> index referencia.fa</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>         <span class="cf">fi</span></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>         <span class="ex">bwa</span> mem <span class="at">-M</span> <span class="at">-R</span> <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">-o</span> DRR025089.sam <span class="dt">\</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                 referencia.fa <span class="dt">\</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                 ../../data/referencia.fa <span class="dt">\</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                 ../../data/DRR025089_1_clean.fastq <span class="dt">\</span></span>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>                 ../../data/DRR025089_2_clean.fastq <span class="dt">\</span></span>
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>         <span class="dv">1</span><span class="op">&gt;</span> bwa.log <span class="dv">2</span><span class="op">&gt;</span> bwa.err</span>
 <span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">fi</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>      <span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> DRR025089_unsorted.bam DRR025089.sam</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>      <span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> DRR025089_unsorted.bam ../../data/DRR025089.sam</span>
 <span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> sort <span class="at">-o</span> DRR025089.bam DRR025089_unsorted.bam</span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> index DRR025089.bam</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> sort <span class="at">-o</span> ../../data/DRR025089.bam DRR025089_unsorted.bam</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> index ../../data/DRR025089.bam</span>
 <span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[main_samview] fail to read the header from &quot;DRR025089.sam&quot;.
-[E::hts_open_format] Failed to open file &quot;DRR025089_unsorted.bam&quot; : No such file or directory
-samtools sort: can&#39;t open &quot;DRR025089_unsorted.bam&quot;: No such file or directory
-[E::hts_open_format] Failed to open file &quot;DRR025089.bam&quot; : No such file or directory
-samtools index: failed to open &quot;DRR025089.bam&quot;: No such file or directory</code></pre>
-</div>
 </div>
 <div class="callout callout-style-default callout-note no-icon callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -3370,57 +3367,57 @@ Desafíos
 <li>Entre las órdenes anteriores, añade la descarga del genoma de referencia en el lugar adecuado y bajo la condición adecuada para que pueda borrarse una vez se haya generado el alineamiento.</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Descargar referencia solo si no existe</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> referencia.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">wget</span> <span class="at">-q</span> <span class="at">-O</span> referencia.fa <span class="dt">\</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        https://www.ebi.ac.uk/ena/browser/api/fasta/GCA_042137995.2</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Indexar referencia si hace falta</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> referencia.fa.bwt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="ex">bwa</span> index referencia.fa</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Alineamiento</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089_unsorted.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        <span class="ex">bwa</span> mem <span class="at">-M</span> <span class="at">-R</span> <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        referencia.fa <span class="dt">\</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>        ../../data/DRR025089_1_clean.fastq <span class="dt">\</span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        ../../data/DRR025089_2_clean.fastq <span class="dt">\</span></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">&gt;</span> DRR025089.sam <span class="dv">2</span><span class="op">&gt;</span> bwa.err</span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        <span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> ../../data/DRR025089_unsorted.bam DRR025089.sam</span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ordenar e indexar</span></span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> sort <span class="at">-o</span> ../../data/DRR025089.bam ../../data/DRR025089_unsorted.bam</span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> index ../../data/DRR025089.bam</span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Borrar intermedios y referencia (opcional)</span></span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-f</span> DRR025089.sam ../../data/DRR025089_unsorted.bam</span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-f</span> referencia.fa referencia.fa.<span class="pp">*</span></span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Descargar referencia solo si no existe</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/referencia.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">wget</span> <span class="at">-q</span> <span class="at">-O</span> ../../data/referencia.fa <span class="dt">\</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        https://www.ebi.ac.uk/ena/browser/api/fasta/GCA_042137995.2</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Indexar referencia si hace falta</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> referencia.fa.bwt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="ex">bwa</span> index referencia.fa</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Alineamiento</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089_unsorted.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        <span class="ex">bwa</span> mem <span class="at">-M</span> <span class="at">-R</span> <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>        ../../data/referencia.fa <span class="dt">\</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>        ../../data/DRR025089_1_clean.fastq <span class="dt">\</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        ../../data/DRR025089_2_clean.fastq <span class="dt">\</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">&gt;</span> DRR025089.sam <span class="dv">2</span><span class="op">&gt;</span> bwa.err</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>        <span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> ../../data/DRR025089_unsorted.bam DRR025089.sam</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ordenar e indexar</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> sort <span class="at">-o</span> ../../data/DRR025089.bam ../../data/DRR025089_unsorted.bam</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    <span class="ex">samtools</span> index ../../data/DRR025089.bam</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Borrar intermedios y referencia (opcional)</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-f</span> DRR025089.sam ../../data/DRR025089_unsorted.bam</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-f</span> ../../data/referencia.fa referencia.fa.<span class="pp">*</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ol start="2" type="1">
 <li>En un bloque de órdenes nuevo, alinea también los pares de lecturas cortas que <code>fastp</code> había combinado (<code>DR025089_m_clean.fastq</code>).</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089_merged.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bwa</span> mem <span class="at">-M</span> <span class="dt">\</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>-R <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>referencia.fa <span class="dt">\</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>../../data/DRR025089_m_clean.fastq <span class="dt">\</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;</span> ../../data/DRR025089_merged.sam</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> ../../data/DRR025089_merged_unsorted.bam ../../data/DRR025089_merged.sam</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> sort <span class="at">-o</span> ../../data/DRR025089_merged.bam ../../data/DRR025089_merged_unsorted.bam</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> index ../../data/DRR025089_merged.bam</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089_merged.bam <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bwa</span> mem <span class="at">-M</span> <span class="dt">\</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>-R <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>../../data/referencia.fa <span class="dt">\</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>../../data/DRR025089_m_clean.fastq <span class="dt">\</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;</span> ../../data/DRR025089_merged.sam</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> view <span class="at">-b</span> <span class="at">-o</span> ../../data/DRR025089_merged_unsorted.bam ../../data/DRR025089_merged.sam</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> sort <span class="at">-o</span> ../../data/DRR025089_merged.bam ../../data/DRR025089_merged_unsorted.bam</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> index ../../data/DRR025089_merged.bam</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ol start="3" type="1">
 <li>Lee la lista de funciones que te ofrece <code>samtools</code> al ejecutarlo sin ningún argumento. ¿Qué función usarías para combinar dos archvivos BAM en uno?</li>
@@ -3430,22 +3427,31 @@ Desafíos
 <li>¿Cuánto espacio de disco ocupan los archivos FASTQ, el genoma de referencia y su índice y el archivo SAM?</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> ../../data/DRR025089_1_clean.fastq</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> ../../data/DRR025089_2_clean.fastq</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> referencia.fa</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> DRR025089.sam</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> ../../data/DRR025089_1_clean.fastq</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> ../../data/DRR025089_2_clean.fastq</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> ../../data/referencia.fa</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> DRR025089.sam</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> 72M    ../../data/DRR025089_1_clean.fastq
  72M    ../../data/DRR025089_2_clean.fastq
-9.7M    referencia.fa
-  0B    DRR025089.sam</code></pre>
+9.7M    ../../data/referencia.fa
+du: DRR025089.sam: No such file or directory</code></pre>
 </div>
 </div>
 <p>Unidades en Mb: 81, 81, 9.7 y 192, respectivamente. 5. Podíamos haber ahorrado algún paso aprovechando las <em>tuberías</em> de BASH:</p>
-<pre><code>bwa mem -M -R &#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39; \
-        referencia.fa DRR025089_1_clean.fastq DRR025089_2_clean.fastq | \
-samtools view -u - | \
-samtools sort - &gt; DRR025089.bam</code></pre>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bwa</span> mem <span class="at">-M</span> <span class="at">-R</span> <span class="st">&#39;@RG\tID:DRR025089\tSM:SAMD00022947&#39;</span> <span class="dt">\</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>        referencia.fa DRR025089_1_clean.fastq DRR025089_2_clean.fastq <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> view <span class="at">-u</span> <span class="at">-</span> <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> sort <span class="at">-</span> <span class="op">&gt;</span> ../../data/DRR025089.bam</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[E::main_mem] fail to open file `DRR025089_1_clean.fastq&#39;.
+[main_samview] fail to read the header from &quot;-&quot;.
+[W::hts_set_opt] Cannot change block size for this format
+samtools sort: failed to read header from &quot;-&quot;</code></pre>
+</div>
+</div>
 <p>Este estilo tiene también la ventaja de ser más rápido. ¿Crees que hay algún inconveniente al usar las tuberías?</p>
 <p>El uso de tuberías en BASH permite ejecutar los programas de forma más rápida y ahorrar espacio en disco, ya que no se generan archivos intermedios como el SAM. Sin embargo, también tiene algunos inconvenientes: al no guardarse los resultados intermedios, es más difícil revisar los pasos del proceso o detectar errores. Además, si el pipeline se interrumpe por algún fallo del sistema o falta de recursos, es necesario repetir todo el proceso desde el principio, ya que no se puede continuar desde un paso intermedio.</p>
 </div>
@@ -3528,7 +3534,10 @@ Desafíos
 <ol start="4" type="1">
 <li>Visualiza los alineamientos en el terminal con la orden siguiente:</li>
 </ol>
-<pre><code>samtools tview DRR025089.bam referencia.fa</code></pre>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># No lo renderizo porque tarda mucho</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> tview ../../data/DRR025089.bam ../../data/referencia.fa</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </div>
 </div>
 </section>
@@ -3536,7 +3545,7 @@ Desafíos
 <h1>Identificación de variantes</h1>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ../../data/DRR025089.vcf <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>   <span class="ex">freebayes</span> <span class="at">-p</span> 1 <span class="at">-f</span> referencia.fa ../../data/DRR025089.bam <span class="op">&gt;</span> ../../data/DRR025089.vcf</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>   <span class="ex">freebayes</span> <span class="at">-p</span> 1 <span class="at">-f</span> ../../data/referencia.fa ../../data/DRR025089.bam <span class="op">&gt;</span> ../../data/DRR025089.vcf</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
