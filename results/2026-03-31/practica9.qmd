@@ -124,8 +124,23 @@ Se puede enraizar el árbol en el nodo que se vea conveniente, en este
 caso, el 75.
 
 ```{r}
-mt_nj_rooted <- root(mt_nj, node = 75)
-plot(mt_nj_rooted, cex = 0.5, label.offset = 0.001, edge.width = 1,no.margin = TRUE)
+plot(mt_nj,
+     type = "phylogram",
+     use.edge.length = TRUE,
+     show.tip.label = TRUE,
+     cex = 0.5,
+     font = 3,
+     edge.width = 2,
+     edge.color = "steelblue4",
+     tip.color = "darkred",
+     no.margin = TRUE)
+
+title("Árbol filogenético NJ de mtDNA")
+
+axisPhylo()
+nodelabels(
+  cex = 0.4
+)
 ```
 
 ## Con un outgroup
