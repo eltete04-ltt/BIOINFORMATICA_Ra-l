@@ -159,7 +159,7 @@ e-value bajo.
 Tras descargar la base de datos de Swissprot para BLAST, procedo a
 realizar el segundo ejercicio.
 
-Esto lo hago primero con la porteína P39615 que srive como ejemplo:
+Esto lo hago primero con la porteína P39615 que sirve como ejemplo:
 
 ```{bash}
 # Como Swissprot debería estar ya descargada en `../../data`, podemos sacar
@@ -286,6 +286,7 @@ fi
 Con `datasets`y `dataformats`continuamos el análisis de los resultados
 obtenidos previamente.
 
+::: {.callout-warning appearance="default" title="Texto explicativo" icon="false"}
 Al ejecutar el código, el error ocurre porque estoy generando el archivo
 `taxids.txt` como una única cadena de identificadores separados por
 comas, en lugar de pasar una lista de taxIDs como argumentos
@@ -298,8 +299,11 @@ no puede procesar correctamente los identificadores. Este texto lo ha
 generado la IA como explicación del error que no me dejaba ejecutar el
 código. A cambio me ha dado este código obviando el archivo
 `taxids.txt`.
+:::
 
 ```{bash}
+#| warning: false
+#| message: false
 IDS=$(cut -f 9 resultado.txt | sort -u | tr '\n' ' ')
 
 ../../bin/datasets summary taxonomy taxon $IDS --as-json-lines | \
@@ -361,7 +365,7 @@ write.table(vegetales, "secuencias_vegetales.txt", sep = "\t", quote = FALSE, ro
 :::
 El script ha sido generado por la IA y yo he procedido a analizar los resultados.
 
-Se importaron en R los archivos `resultado.txt` y `taxreport.txt` para combinar la información del alineamiento BLAST con la clasificación taxonómica de cada secuencia. El archivo r`esultado.txt` contiene, para cada lectura seleccionada, el identificador de la secuencia problema, el acceso del mejor hit, la longitud del alineamiento, la longitud total de la query, las coordenadas alineadas, el e-value, el bitscore y el identificador taxonómico (`staxid`). Por su parte, `taxreport.txt` permite traducir cada staxid a un organismo concreto y situarlo dentro de su clasificación biológica, incluyendo reino, filo, clase, orden, familia, género y especie.
+Se importaron en R los archivos `resultado.txt` y `taxreport.txt` para combinar la información del alineamiento BLAST con la clasificación taxonómica de cada secuencia. El archivo `resultado.txt` contiene, para cada lectura seleccionada, el identificador de la secuencia problema, el acceso del mejor hit, la longitud del alineamiento, la longitud total de la query, las coordenadas alineadas, el e-value, el bitscore y el identificador taxonómico (`staxid`). Por su parte, `taxreport.txt` permite traducir cada staxid a un organismo concreto y situarlo dentro de su clasificación biológica, incluyendo reino, filo, clase, orden, familia, género y especie.
 
 Tras unir ambas tablas mediante el identificador taxonómico, se obtuvo una tabla final en la que cada lectura queda asociada a su posible origen biológico. A partir de esta tabla se clasificaron las secuencias en dos grupos: aquellas cuyo orden taxonómico es Hemiptera y aquellas que pertenecen a otros organismos. El análisis mostró un total de 26 lecturas con hit, de las cuales 8 se asignaron a Hemiptera y 18 a otros organismos. Esto corresponde a una fracción del 30.8% para Hemiptera y del 69.2% para otros organismos.
 
